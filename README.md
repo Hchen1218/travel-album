@@ -22,7 +22,18 @@ python3 -m http.server 8765
 
 ## 换照片
 
-照片在 `photos/sq/`（640×640 方图，用在照片环上）和 `photos/full/`（长边 1600，用在章节页上），两边文件名一致。章节、照片和图注都在 `index.html` 顶部的 `CHAPTERS` 数据里，换照片只改这一处。
+照片在 `photos/sq/`（640×640 方图，用在照片环上）和 `photos/full/`（长边 1600，用在章节页上），两边文件名一致。章节、照片和图注都在 `index.html` 顶部的 `CHAPTERS` 数据里；标题、首页大字、字体、音阶和动效参数在旁边的 `THEME` 里。整理好的照片可以用 `skills/photo-album/scripts/prepare_photos.py` 生成。
+
+## 用你自己的照片做一个
+
+仓库里带了一个 skill：[`skills/photo-album/`](skills/photo-album/SKILL.md)。把它和你的照片文件夹一起交给任何一个 agent（Claude Code、Codex、Cursor 等），它会按下面的步骤做出一个结构相同、风格属于你自己照片的网站：
+
+1. 量照片：主色、明暗、冷暖、夜景比例，并生成一张缩略图总览；
+2. 从这些数据里读出一份"风格 DNA"：纸色、强调色、字体、动效性格、粒子形态、风格台效果、音阶、每章的声音；
+3. 用几个问题跟你确认；
+4. 把 DNA 填进模板。
+
+`index.html` 顶部标了「风格区」的地方是可变的，其余是引擎。skill 的原理和规则写在 `skills/photo-album/references/` 里。
 
 ## 署名与版权
 
