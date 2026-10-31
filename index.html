@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>JAPAN — 旅行相册</title>   <!-- 和 THEME.title 一致 -->
+<title>JAPAN — Alex 的旅行相册</title>   <!-- 和 THEME.title 一致 -->
+<meta name="author" content="Alex">
 <!-- 字体：display 字体 + 中文配字。换字体时同步改 :root --display 和 THEME.font -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,11 +44,13 @@ a{color:inherit;text-decoration:none}
 .nav a{display:flex;align-items:center;padding:0 28px;border-left:1px solid var(--line);font-size:12px;font-weight:500;
   transition:color .25s}
 .nav a:hover,.nav a[aria-current="true"]{color:var(--accent)}
+.about-trigger{padding:0 28px;border-left:1px solid var(--line);font-size:12px;font-weight:500;transition:color .25s}
+.about-trigger:hover,.about-trigger[aria-expanded="true"]{color:var(--accent)}
 .snd{display:flex;align-items:center;gap:10px;padding:0 24px;border-left:1px solid var(--line);font-size:12px;font-weight:500;transition:color .25s}
 .snd:hover,.snd[aria-pressed="true"]{color:var(--accent)}
 .snd .eq{display:flex;align-items:flex-end;gap:2px;height:12px}
 .snd .eq i{width:2px;height:3px;background:currentColor}
-.snd[aria-pressed="true"] .eq i{animation:eq .9s ease-in-out infinite}
+.snd[data-playing="true"] .eq i{animation:eq .9s ease-in-out infinite}
 .snd .eq i:nth-child(2){animation-delay:-.3s}.snd .eq i:nth-child(3){animation-delay:-.6s}.snd .eq i:nth-child(4){animation-delay:-.15s}
 @keyframes eq{0%,100%{height:3px}50%{height:12px}}
 
@@ -62,11 +65,17 @@ a{color:inherit;text-decoration:none}
   display:block;background:var(--ph)}
 .tile img{width:100%;height:100%;object-fit:cover;display:block;transform:scale(1.001);
   transition:transform .8s var(--ease)}
-.tile:hover img{transform:scale(1.06)}
 .ov{position:absolute;inset:0;background:var(--accent);color:var(--on-accent);
   display:flex;flex-direction:column;justify-content:space-between;padding:calc(var(--c)*.09);
   clip-path:inset(100% 0 0 0);transition:clip-path .5s var(--ease);text-align:left;pointer-events:none}
-.tile:hover .ov,.tile:focus-visible .ov{clip-path:inset(0 0 0 0)}
+.tile:focus-visible .ov{clip-path:inset(0 0 0 0)}
+@media (hover:hover){
+  .tile:hover img{transform:scale(1.06)}
+  .tile:hover .ov{clip-path:inset(0 0 0 0)}
+}
+.tile.preview{outline:3px solid var(--accent);outline-offset:-3px}
+.tile.preview .ov{clip-path:inset(0);background:linear-gradient(transparent 40%,rgba(18,18,18,.75));color:var(--bg)}
+#home{touch-action:none}
 .ov em{font-style:normal;font-size:clamp(8px,calc(var(--c)*.072),11px);font-weight:600}
 .ov b{font-size:clamp(9px,calc(var(--c)*.085),13px);font-weight:700;line-height:1.25}
 .ov b span{display:block;font-family:var(--cjk);font-stretch:100%;font-weight:500;margin-top:2px}
@@ -82,12 +91,20 @@ a{color:inherit;text-decoration:none}
   pointer-events:none}
 .center canvas{display:block;pointer-events:auto;touch-action:none}
 .sub{font-size:clamp(11px,1.25vw,17px);font-weight:500;letter-spacing:.06em}
+.home-byline{display:block;margin:7px auto 0;padding:2px 0;font-size:10px;color:var(--muted);
+  text-transform:none;letter-spacing:.04em;pointer-events:auto;transition:color .25s}
+.home-byline:hover{color:var(--accent)}
 .places{font-size:clamp(9px,.8vw,11px);color:var(--muted);letter-spacing:.14em}
-.hint{position:absolute;bottom:calc(var(--c)*.22);font-size:10px;color:var(--muted);letter-spacing:.2em;
+.hint{font-size:10px;color:var(--muted);letter-spacing:.2em;
   display:flex;align-items:center;gap:8px}
 .hint i{width:28px;height:1px;background:currentColor;position:relative;overflow:hidden}
 .hint i::after{content:"";position:absolute;inset:0;background:var(--accent);transform:translateX(-100%);
   animation:sweep 2.4s var(--ease) infinite}
+.touch-enter{display:inline-flex;align-items:center;gap:10px;min-height:40px;padding:8px 14px;border:1px solid var(--accent);
+  color:var(--accent);font-family:var(--cjk);font-size:12px;pointer-events:auto}
+.touch-enter[hidden]{display:none}
+.touch-enter:hover{background:var(--accent);color:var(--on-accent)}
+.touch-enter:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 @keyframes sweep{60%,100%{transform:translateX(100%)}}
 
 /* ---------- chapter view ---------- */
@@ -137,6 +154,42 @@ a{color:inherit;text-decoration:none}
 .foot{position:absolute;left:0;right:0;bottom:0;height:44px;border-top:1px solid var(--line);display:grid;
   grid-template-columns:1fr auto 1fr;align-items:center;padding:0 24px;font-size:10px;color:var(--muted);letter-spacing:.12em}
 .foot span:last-child{justify-self:end}
+.author-signature{justify-self:start;font-size:inherit;color:inherit;text-transform:none;letter-spacing:.03em}
+.author-signature:hover{color:var(--accent)}
+
+/* ---------- 作者页：与章节共用路由和幕布转场 ---------- */
+.about{display:flex;flex-direction:column;overflow-y:auto;overscroll-behavior:contain}
+.about .ch-head{position:relative;inset:auto;flex:none}
+.author-page{width:min(1100px,100%);margin:0 auto;flex:1;display:grid;grid-template-columns:1.2fr 1fr;
+  align-items:center;gap:clamp(40px,7vw,110px);padding:48px}
+.author-kicker{font-size:12px;color:var(--muted);letter-spacing:.06em;margin-bottom:16px}
+.author-name{font-size:clamp(80px,10vw,144px);font-weight:800;font-stretch:var(--stretch);line-height:1.1;letter-spacing:-.05em}
+.author-name:focus{outline:none}
+.author-intro{margin-top:24px;font-family:var(--cjk);font-size:14px;line-height:1.9;color:var(--muted)}
+.author-socials{display:flex;gap:12px;padding-bottom:32px}
+.social-icon{position:relative;display:grid;place-items:center;width:58px;height:58px;flex:none;
+  border:1px solid var(--line);transition:color .2s,border-color .2s,background .2s}
+.social-icon svg{display:block;width:25px;height:25px;fill:currentColor}
+.social-icon[data-platform="xiaohongshu"] svg{width:34px;height:34px}
+.social-icon:hover,.social-icon:focus-visible{color:var(--accent);border-color:var(--accent);background:rgba(240,72,26,.035)}
+.social-tooltip{position:absolute;left:50%;top:calc(100% + 8px);transform:translateX(-50%);
+  padding:5px 8px;background:var(--ink);color:var(--bg);font-family:var(--cjk);font-size:10px;line-height:1.4;
+  white-space:nowrap;opacity:0;visibility:hidden;pointer-events:none}
+.social-icon:hover .social-tooltip,.social-icon:focus-visible .social-tooltip{opacity:1;visibility:visible}
+.author-contact{margin-top:16px;padding-top:24px;border-top:1px solid var(--line)}
+.author-label{font-family:var(--cjk);font-size:11px;font-weight:500;color:var(--muted);margin-bottom:14px}
+.author-email-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.author-email{display:flex;align-items:center;gap:10px;min-width:0;font-size:14px;letter-spacing:.01em}
+.author-email span{overflow-wrap:anywhere}
+.author-email:hover{color:var(--accent)}
+.author-email svg,.author-copy svg{width:19px;height:19px;flex:none;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round;stroke-linecap:round}
+.author-copy{display:grid;place-items:center;width:40px;height:40px;flex:none;border:1px solid var(--line)}
+.author-copy:hover{color:var(--accent);border-color:var(--accent)}
+.author-status{min-height:30px;margin-top:8px;color:var(--accent);font-family:var(--cjk);font-size:11px;line-height:1.6}
+.about .foot{position:static;flex:none;min-height:44px}
+.about .foot span:first-child{text-transform:none}
+.about-trigger:focus-visible,.home-byline:focus-visible,.author-signature:focus-visible,
+.author-page :is(a,button):focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 
 /* ---------- 单张大图：点阵显影 + 放大镜 ---------- */
 .fig .pic{cursor:zoom-in}
@@ -213,18 +266,28 @@ a{color:inherit;text-decoration:none}
 /* ---------- curtain ---------- */
 .curtain{position:fixed;inset:0;background:var(--accent);z-index:50;transform:translateY(100%);pointer-events:none;
   display:grid;place-items:center;color:var(--on-accent)}
+.curtain.active{pointer-events:auto}
 .curtain b{font-size:clamp(28px,6vw,80px);font-weight:800;font-stretch:var(--stretch);letter-spacing:.02em;text-transform:var(--case)}
 
 @media (max-width:700px){
   :root{--hdr:50px}
-  .logo{padding:0 16px;font-size:16px}
-  .nav a{padding:0 14px;font-size:10px}
+  .logo{padding:0 10px;font-size:14px}
+  .nav a{padding:0 8px;font-size:10px}
+  .nav [data-nav="home"]{display:none}
   .nav a.opt{display:none}
-  .snd{padding:0 14px}
+  .snd{padding:0 10px}
   .snd .lbl{display:none}
+  .about-trigger{padding:0 10px;font-size:10px}
+  .author-page{grid-template-columns:1fr;align-content:center;gap:28px;padding:28px 24px 32px}
+  .author-name{font-size:76px}
+  .author-intro{margin-top:18px;font-size:13px}
+  .author-socials{gap:12px}
+  .author-contact{margin-top:8px;padding-top:20px}
+  .about .ch-head{height:76px}
+  .about .ch-count{font-size:9px}
   .places{display:none}
   .sub,.hint{white-space:nowrap}
-  .hint{font-size:8px;letter-spacing:.14em;gap:6px}
+  .hint{font-size:10px;letter-spacing:.06em;gap:6px}
   .hint i{width:14px}
   .ch-head{padding:0 16px;height:76px}
   .ch-line{top:76px;font-size:12px;padding:0 16px}
@@ -237,6 +300,10 @@ a{color:inherit;text-decoration:none}
   .styles button em{display:none}
   .foot{padding:0 16px;font-size:9px}
   .foot span:nth-child(2){display:none}
+}
+@media (max-width:360px){
+  .logo{padding:0 8px}
+  .about-trigger{padding:0 8px}
 }
 @media (prefers-reduced-motion:reduce){
   .tile img,.ov{transition:none}
@@ -251,8 +318,8 @@ a{color:inherit;text-decoration:none}
   <nav class="nav x">
     <a href="#/" data-nav="home">Album</a>
     <a href="#/ch/1" data-nav="ch">Chapters</a>
-    <button class="snd" id="snd" type="button" aria-pressed="false" aria-label="声音开关"><span class="eq"><i></i><i></i><i></i><i></i></span><span class="lbl">Sound</span></button>
-    <a class="opt" id="year" href="#/" tabindex="-1"></a>
+    <button class="snd" id="snd" type="button" aria-pressed="true" aria-label="声音已开启，点击关闭"><span class="eq"><i></i><i></i><i></i><i></i></span><span class="lbl">Sound</span></button>
+    <a class="about-trigger x" href="#/about" data-nav="about" data-author-open>About</a>
   </nav>
 </header>
 
@@ -262,7 +329,8 @@ a{color:inherit;text-decoration:none}
       <canvas id="dots"></canvas>
       <p class="sub x"></p>
       <p class="places x"></p>
-      <p class="hint x"><i></i>Scroll to travel<i></i></p>
+      <p class="hint x"><i></i><span id="touchGuide">Scroll to travel</span><i></i></p>
+      <a class="touch-enter" id="touchEnter" hidden href="#/"></a>
     </div>
   </div>
 </section>
@@ -282,6 +350,33 @@ a{color:inherit;text-decoration:none}
     <a class="next" id="chNext" href="#/"></a>
   </div>
   <div class="foot x" id="foot"></div>
+</section>
+
+<section class="view about" id="about" hidden aria-labelledby="authorName">
+  <div class="ch-head x">
+    <a class="back" id="authorBack" href="#/">← Back</a>
+    <h1 class="ch-title"><small>A travel journal</small>About <span>关于</span></h1>
+    <span class="ch-count" id="authorYear"></span>
+  </div>
+  <div class="author-page">
+    <div>
+      <p class="author-kicker">Behind the journal</p>
+      <h2 class="author-name" id="authorName" tabindex="-1"></h2>
+      <p class="author-intro">这是我的旅行相册。<br>也可以在这些地方找到我。</p>
+    </div>
+    <div>
+    <nav class="author-socials" id="authorSocials" aria-label="Alex 的社交主页"></nav>
+    <div class="author-contact">
+      <h3 class="author-label">联系我</h3>
+      <div class="author-email-row">
+        <a class="author-email" id="authorEmail"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="1"/><path d="m3 6 9 7 9-7"/></svg><span></span></a>
+        <button class="author-copy" id="authorCopy" type="button" aria-label="复制邮箱"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="13" rx="1"/><path d="M16 8V3H3v13h5"/></svg></button>
+      </div>
+      <p class="author-status" id="authorStatus" role="status"></p>
+    </div>
+    </div>
+  </div>
+  <div class="foot x"><span id="authorCopyright"></span><span id="authorStats"></span><span id="authorJournal"></span></div>
 </section>
 
 <div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="单张大图" aria-hidden="true">
@@ -320,14 +415,25 @@ a{color:inherit;text-decoration:none}
    其余都是引擎。每个值怎么从照片里推出来，见 skills/photo-album/SKILL.md
    ============================================================ */
 const THEME = {
-  title:"JAPAN — 旅行相册",
+  title:"JAPAN — Alex 的旅行相册",
   logo:["Travel", "JP"],                       // 左上角：一个词 + 方框里的缩写
   year:"2026",
   journal:"A travel journal",
+  author:{
+    name:"Alex",
+    email:"hchennn@icloud.com",
+    links:[
+      { icon:"xiaohongshu", label:"小红书", url:"https://www.xiaohongshu.com/user/profile/673be618000000001c01a689" },
+      { icon:"github", label:"GitHub", url:"https://github.com/Hchen1218" },
+      { icon:"x", label:"X", url:"https://x.com/AlexxxCreator" },
+      { icon:"tiktok", label:"抖音", url:"https://www.douyin.com/user/MS4wLjABAAAADSjF0PvKqA4uLcpRedZYBnvlmAexUxGsTBDSS6_CxFo" },
+    ],
+  },
   home:{ word:"JAPAN", sub:"Travel / 26 / 11", line:"Tokyo · Osaka · Kobe · Kyoto" },   // 首页点阵大字、副标题、地点行
   font:{ family:"Archivo", weight:900, stretch:"expanded", upper:true },   // 点阵字用的字体，和 :root --display 的第一个一致；upper 和 --case 一致
   scale:[0,1,5,7,8], base:62,                  // 音阶（这里是都节音阶，日本五声）和基准音高（MIDI 音符号）
   presence:1,                                  // 章节环境声的音量：.5 若有若无 / 1 默认 / 1.5 有存在感
+  soundOn:true,                               // 进站默认开启；需要用户手势的浏览器会在首次触摸/按键时接通
   motion:{                                     // 动效性格：利落的城市感。数值越小越慢、越软
     drift:.0032,     // 没人操作时照片环自己转的速度（格/帧）
     follow:.075,     // 照片环、章节页追手的快慢（0–1）
@@ -388,6 +494,57 @@ const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const pad2 = n => String(n).padStart(2,"0");
 const mod = (a,n) => ((a % n) + n) % n;
 
+/* ---------------- 作者信息：图标在页内，不请求外部图标服务 ---------------- */
+// Brand paths: Simple Icons (CC0), https://github.com/simple-icons/simple-icons
+const AUTHOR_ICONS = {"xiaohongshu":"<path d=\"M22.405 9.879c.002.016.01.02.07.019h.725a.797.797 0 0 0 .78-.972.794.794 0 0 0-.884-.618.795.795 0 0 0-.692.794c0 .101-.002.666.001.777zm-11.509 4.808c-.203.001-1.353.004-1.685.003a2.528 2.528 0 0 1-.766-.126.025.025 0 0 0-.03.014L7.7 16.127a.025.025 0 0 0 .01.032c.111.06.336.124.495.124.66.01 1.32.002 1.981 0 .01 0 .02-.006.023-.015l.712-1.545a.025.025 0 0 0-.024-.036zM.477 9.91c-.071 0-.076.002-.076.01a.834.834 0 0 0-.01.08c-.027.397-.038.495-.234 3.06-.012.24-.034.389-.135.607-.026.057-.033.042.003.112.046.092.681 1.523.787 1.74.008.015.011.02.017.02.008 0 .033-.026.047-.044.147-.187.268-.391.371-.606.306-.635.44-1.325.486-1.706.014-.11.021-.22.03-.33l.204-2.616.022-.293c.003-.029 0-.033-.03-.034zm7.203 3.757a1.427 1.427 0 0 1-.135-.607c-.004-.084-.031-.39-.235-3.06a.443.443 0 0 0-.01-.082c-.004-.011-.052-.008-.076-.008h-1.48c-.03.001-.034.005-.03.034l.021.293c.076.982.153 1.964.233 2.946.05.4.186 1.085.487 1.706.103.215.223.419.37.606.015.018.037.051.048.049.02-.003.742-1.642.804-1.765.036-.07.03-.055.003-.112zm3.861-.913h-.872a.126.126 0 0 1-.116-.178l1.178-2.625a.025.025 0 0 0-.023-.035l-1.318-.003a.148.148 0 0 1-.135-.21l.876-1.954a.025.025 0 0 0-.023-.035h-1.56c-.01 0-.02.006-.024.015l-.926 2.068c-.085.169-.314.634-.399.938a.534.534 0 0 0-.02.191.46.46 0 0 0 .23.378.981.981 0 0 0 .46.119h.59c.041 0-.688 1.482-.834 1.972a.53.53 0 0 0-.023.172.465.465 0 0 0 .23.398c.15.092.342.12.475.12l1.66-.001c.01 0 .02-.006.023-.015l.575-1.28a.025.025 0 0 0-.024-.035zm-6.93-4.937H3.1a.032.032 0 0 0-.034.033c0 1.048-.01 2.795-.01 6.829 0 .288-.269.262-.28.262h-.74c-.04.001-.044.004-.04.047.001.037.465 1.064.555 1.263.01.02.03.033.051.033.157.003.767.009.938-.014.153-.02.3-.06.438-.132.3-.156.49-.419.595-.765.052-.172.075-.353.075-.533.002-2.33 0-4.66-.007-6.991a.032.032 0 0 0-.032-.032zm11.784 6.896c0-.014-.01-.021-.024-.022h-1.465c-.048-.001-.049-.002-.05-.049v-4.66c0-.072-.005-.07.07-.07h.863c.08 0 .075.004.075-.074V8.393c0-.082.006-.076-.08-.076h-3.5c-.064 0-.075-.006-.075.073v1.445c0 .083-.006.077.08.077h.854c.075 0 .07-.004.07.07v4.624c0 .095.008.084-.085.084-.37 0-1.11-.002-1.304 0-.048.001-.06.03-.06.03l-.697 1.519s-.014.025-.008.036c.006.01.013.008.058.008 1.748.003 3.495.002 5.243.002.03-.001.034-.006.035-.033v-1.539zm4.177-3.43c0 .013-.007.023-.02.024-.346.006-.692.004-1.037.004-.014-.002-.022-.01-.022-.024-.005-.434-.007-.869-.01-1.303 0-.072-.006-.071.07-.07l.733-.003c.041 0 .081.002.12.015.093.025.16.107.165.204.006.431.002 1.153.001 1.153zm2.67.244a1.953 1.953 0 0 0-.883-.222h-.18c-.04-.001-.04-.003-.042-.04V10.21c0-.132-.007-.263-.025-.394a1.823 1.823 0 0 0-.153-.53 1.533 1.533 0 0 0-.677-.71 2.167 2.167 0 0 0-1-.258c-.153-.003-.567 0-.72 0-.07 0-.068.004-.068-.065V7.76c0-.031-.01-.041-.046-.039H17.93s-.016 0-.023.007c-.006.006-.008.012-.008.023v.546c-.008.036-.057.015-.082.022h-.95c-.022.002-.028.008-.03.032v1.481c0 .09-.004.082.082.082h.913c.082 0 .072.128.072.128V11.19s.003.117-.06.117h-1.482c-.068 0-.06.082-.06.082v1.445s-.01.068.064.068h1.457c.082 0 .076-.006.076.079v3.225c0 .088-.007.081.082.081h1.43c.09 0 .082.007.082-.08v-3.27c0-.029.006-.035.033-.035l2.323-.003c.098 0 .191.02.28.061a.46.46 0 0 1 .274.407c.008.395.003.79.003 1.185 0 .259-.107.367-.33.367h-1.218c-.023.002-.029.008-.028.033.184.437.374.871.57 1.303a.045.045 0 0 0 .04.026c.17.005.34.002.51.003.15-.002.517.004.666-.01a2.03 2.03 0 0 0 .408-.075c.59-.18.975-.698.976-1.313v-1.981c0-.128-.01-.254-.034-.38 0 .078-.029-.641-.724-.998z\"/>","github":"<path d=\"M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12\"/>","x":"<path d=\"M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z\"/>","tiktok":"<path d=\"M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z\"/>"};
+let authorTrigger = null, authorReturn = "#/";
+function authorLink(text, cls){
+  const link = document.createElement("a");
+  link.href = "#/about"; link.className = cls; link.textContent = text;
+  link.dataset.authorOpen = "";
+  return link;
+}
+function initAuthor(){
+  const author = THEME.author;
+  $("#authorName").textContent = author.name;
+  $("#authorSocials").setAttribute("aria-label", `${author.name} 的社交主页`);
+  author.links.forEach(link=>{
+    const a = document.createElement("a");
+    a.className = "social-icon"; a.dataset.platform = link.icon;
+    a.href = link.url; a.target = "_blank"; a.rel = "noopener noreferrer";
+    a.setAttribute("aria-label", `${link.label}：${author.name} 的主页（新标签页打开）`);
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true");
+    svg.innerHTML = AUTHOR_ICONS[link.icon];
+    const label = document.createElement("span"); label.className = "social-tooltip"; label.textContent = link.label;
+    a.append(svg, label); $("#authorSocials").append(a);
+  });
+  $("#authorEmail").href = `mailto:${author.email}`;
+  $("#authorEmail span").textContent = author.email;
+  $("#authorCopyright").textContent = `© ${THEME.year} ${author.name}`;
+  $("#authorJournal").textContent = THEME.journal;
+  $("#authorStats").textContent = STATS;
+  $("#authorYear").textContent = THEME.year;
+  const stats = document.createElement("span"), journal = document.createElement("span");
+  stats.textContent = STATS; journal.textContent = THEME.journal;
+  $("#foot").replaceChildren(authorLink(`© ${THEME.year} ${author.name}`, "author-signature"), stats, journal);
+}
+document.addEventListener("click", e=>{
+  const trigger = e.target instanceof Element && e.target.closest("[data-author-open]");
+  if (!trigger || route.view==="about") return;
+  authorTrigger = trigger; authorReturn = location.hash || "#/";
+  $("#authorBack").href = authorReturn;
+});
+addEventListener("keydown", e=>{
+  if (route.view==="about" && e.key==="Escape"){ e.preventDefault(); location.hash = authorReturn; }
+});
+$("#authorCopy").addEventListener("click", async()=>{
+  try {
+    await navigator.clipboard.writeText(THEME.author.email);
+    $("#authorStatus").textContent = "邮箱已复制";
+  } catch(e){ $("#authorStatus").textContent = "请选中邮箱地址复制"; }
+});
+
 // 环上的格子：各章节轮流取一张，让相邻格子尽量来自不同章节
 function ringTiles(){
   const out = [], max = Math.max(...CHAPTERS.map(c=>c.photos.length));
@@ -401,7 +558,30 @@ const TILES = ringTiles();
 
 /* ---------------- 首页：照片环 ---------------- */
 const frame = $("#frame"), center = $("#center");
-const ring = { u:0, tu:0, strips:[], c:120, cols:7, rows:5, lastInput:0, hover:false };
+const ring = { u:0, tu:0, strips:[], c:120, cols:7, rows:5, lastInput:0, hover:false,
+  input:matchMedia("(hover: none), (pointer: coarse)").matches ? "touch" : "mouse", preview:null, suppressUntil:0 };
+const touchEnter = $("#touchEnter"), touchGuide = $("#touchGuide");
+function updateTouchGuide(){
+  touchGuide.textContent = ring.input==="mouse" ? "Scroll to travel" : ring.preview ? "再点照片，或进入章节" : "轻点预览 · 滑动浏览";
+}
+function clearTouchPreview(reset=true){
+  ring.preview = null;
+  frame.querySelectorAll(".tile.preview").forEach(el=>el.classList.remove("preview"));
+  touchEnter.hidden = true;
+  updateTouchGuide();
+  if (reset && P.shapes.length){ clearTimeout(P.timer); setShape(0, null, false); setCaption(-1); }
+}
+function previewTile(t){
+  clearTimeout(P.timer);
+  if (!P.shapes.length) sampleDots(false);
+  P.mx = P.my = -1e4;
+  ring.preview = { ...t, at:performance.now() }; ring.tu = ring.u;
+  frame.querySelectorAll("a.tile").forEach(el=>el.classList.toggle("preview", el.dataset.src===t.p.src));
+  setCaption(t.ci); setShape(t.ci+1, t.p.src);
+  touchEnter.href = `#/ch/${t.ci+1}/${t.pi+1}`;
+  touchEnter.textContent = `进入${CHAPTERS[t.ci].zh}章节 →`; touchEnter.hidden = false;
+  updateTouchGuide(); sndHover(t.ci, t.pi);
+}
 
 function tileEl(t){
   if (t.text){
@@ -410,11 +590,34 @@ function tileEl(t){
   }
   const ch = CHAPTERS[t.ci], b = document.createElement("a");
   b.className = "tile"; b.href = `#/ch/${t.ci+1}/${t.pi+1}`;
+  b.dataset.src = t.p.src;
+  if (ring.preview?.p.src===t.p.src) b.classList.add("preview");
   b.setAttribute("aria-label", `${ch.zh}：${t.p.cap}`);
   const label = `<em>CH.${pad2(t.ci+1)} — ${pad2(t.pi+1)}</em><b>${ch.en}<span>${ch.zh}</span></b>`;
   b.innerHTML = `<img src="photos/sq/${t.p.src}.jpg" alt="" decoding="async"><span class="ov x">${label}</span>`;
-  b.addEventListener("mouseenter",()=>{ ring.hover = true; hoverChapter(t.ci, t.p.src); sndHover(t.ci, t.pi); });
-  b.addEventListener("mouseleave",()=>{ ring.hover = false; hoverChapter(-1); });
+  b.addEventListener("pointerenter", e=>{
+    if (e.pointerType!=="mouse") return;
+    if (ring.preview) clearTouchPreview(false);
+    ring.input = "mouse"; updateTouchGuide();
+    ring.hover = true; hoverChapter(t.ci, t.p.src); sndHover(t.ci, t.pi);
+  });
+  b.addEventListener("pointerleave", e=>{
+    if (e.pointerType!=="mouse") return;
+    ring.hover = false; if (route.view==="home") hoverChapter(-1);
+  });
+  b.addEventListener("click", e=>{
+    if (performance.now() < ring.suppressUntil){ e.preventDefault(); return; }
+    if (e.detail===0 && !e.pointerType) return; // 键盘和辅助功能保持一次激活即可进入。
+    const touch = e.pointerType ? e.pointerType!=="mouse" : ring.input!=="mouse";
+    if (!touch) return;
+    ring.input = "touch"; ring.hover = false;
+    // 第一次轻点留在首页预览；再点同一张，或点中间的进入按钮。
+    if (ring.preview?.p.src===t.p.src) return;
+    e.preventDefault(); previewTile(t);
+  });
+  b.querySelector("img").addEventListener("load", ()=>{
+    if (ring.preview?.p.src===t.p.src && P.shapes.length) setShape(t.ci+1, t.p.src, false);
+  });
   return b;
 }
 
@@ -470,16 +673,31 @@ function renderRing(){
 }
 
 /* 输入：滚轮 / 触摸拖动 / 键盘 → 只改目标位置，每帧插值追上 */
-function nudge(d){ ring.tu += d; ring.lastInput = performance.now(); }
+function nudge(d){ if (ring.preview) clearTouchPreview(); ring.tu += d; ring.lastInput = performance.now(); }
 $("#home").addEventListener("wheel", e=>{ e.preventDefault(); nudge((e.deltaY+e.deltaX)/240); }, { passive:false });
-let touchY = null;
-$("#home").addEventListener("touchstart", e=>{ touchY = e.touches[0].clientX + e.touches[0].clientY; }, { passive:true });
-$("#home").addEventListener("touchmove", e=>{
-  if (touchY===null) return;
-  const v = e.touches[0].clientX + e.touches[0].clientY;
-  nudge(-(v-touchY)/ring.c*1.2); touchY = v;
+let homeTouch = null;
+$("#home").addEventListener("touchstart", e=>{
+  ring.input = "touch"; ring.hover = false; updateTouchGuide();
+  if (e.touches.length!==1){ homeTouch = null; ring.suppressUntil = performance.now()+600; return; }
+  const t = e.touches[0];
+  homeTouch = { x:t.clientX, y:t.clientY, last:t.clientX+t.clientY, moved:false };
 }, { passive:true });
-$("#home").addEventListener("touchend", ()=>touchY=null);
+$("#home").addEventListener("touchmove", e=>{
+  if (!homeTouch || e.touches.length!==1) return;
+  const t = e.touches[0], v = t.clientX+t.clientY;
+  if (Math.hypot(t.clientX-homeTouch.x,t.clientY-homeTouch.y)>8) homeTouch.moved = true;
+  if (homeTouch.moved){ nudge(-(v-homeTouch.last)/ring.c*1.2); ring.suppressUntil = performance.now()+600; }
+  homeTouch.last = v;
+}, { passive:true });
+const endHomeTouch = ()=>{
+  if (homeTouch?.moved) ring.suppressUntil = performance.now()+600;
+  homeTouch = null;
+};
+$("#home").addEventListener("touchend", endHomeTouch);
+$("#home").addEventListener("touchcancel", endHomeTouch);
+$("#home").addEventListener("click", e=>{
+  if (ring.preview && e.target instanceof Element && !e.target.closest("a,button")) clearTouchPreview();
+});
 addEventListener("keydown", e=>{
   if (route.view!=="home") return;
   if (e.key==="ArrowDown"||e.key==="ArrowRight") nudge(1);
@@ -574,6 +792,8 @@ function tintAt(data, x, y){
 function hoverChapter(ci, src){
   clearTimeout(P.timer);
   P.timer = setTimeout(()=>{
+    if (route.view!=="home" || ring.preview) return;
+    if (!P.shapes.length) sampleDots(false);
     const k = ci<0 ? 0 : ci+1;
     if (k!==P.key) setCaption(ci);
     setShape(k, ci<0 ? null : src);
@@ -581,7 +801,8 @@ function hoverChapter(ci, src){
 }
 function setCaption(ci){
   const ch = CHAPTERS[ci];
-  subEl.textContent = ci<0 ? HOME.sub : `CH.${pad2(ci+1)} / ${ch.zh} / ${pad2(ch.photos.length)} photos`;
+  subEl.textContent = ci<0 ? HOME.sub : ring.input==="touch" ? `CH.${pad2(ci+1)} / ${ch.zh}` : `CH.${pad2(ci+1)} / ${ch.zh} / ${pad2(ch.photos.length)} photos`;
+  if (ci<0) subEl.append(authorLink(`A travel journal by ${THEME.author.name}`, "home-byline"));
   lineEl.textContent = ci<0 ? HOME.line : ch.line;
   if (!reduce) [subEl, lineEl].forEach(el=>el.animate([{ opacity:0, transform:"translateY(6px)" },{ opacity:1, transform:"none" }], { duration:380, easing:"cubic-bezier(.2,.7,.2,1)" }));
 }
@@ -1158,7 +1379,7 @@ function lbReadout(rgb, nx, ny){
 }
 // 听照片：指针下的亮度换成都节音阶里的一个音，越亮越高，颜色越艳越响；只在换到新音时响
 function lpListen(cx, cy){
-  if (!SND.on) return;
+  if (!sndReady()) return;
   const now = performance.now(); if (now - LP.at < 110) return;
   const R = LB.rect, it = LB.item, c = lpSample((cx - R.x)/R.w*it.W, (cy - R.y)/R.h*it.H);
   const deg = Math.round(lumOf(...c)*9); if (deg===LP.deg) return;
@@ -1198,12 +1419,13 @@ addEventListener("keydown", e=>{
 });
 
 /* ---------------- 声音：全部由浏览器现场合成，不用任何音乐文件 ---------------- */
-const SND = { on:false, ac:null, amb:null, cur:-2, step:0, last:0, tone:-1, ks:new Map() };
+const SND = { on:THEME.soundOn, active:false, ac:null, amb:null, cur:-2, step:0, last:0, tone:-1, ks:new Map() };
 const SCALE = THEME.scale, NS = SCALE.length;
 const hz = (deg, oct=0, base=THEME.base) => 440*Math.pow(2, (base + 12*(oct + Math.floor(deg/NS)) + SCALE[mod(deg,NS)] - 69)/12);
 const rnd = (a,b) => a + Math.random()*(b-a);
 const pick = a => a[Math.floor(Math.random()*a.length)];
 const A = () => SND.ac;
+const sndReady = () => SND.on && SND.ac?.state==="running";
 
 function sndInit(){
   const ac = SND.ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -1392,11 +1614,11 @@ const SCENES = [
 ];
 /* ===== 声音：风格区结束 ===== */
 
-function lbSnd(name, ...a){ if (!SND.on || !SND.ac) return; const f = LB_SND[LB.ci]?.[name]; if (f) f(A().currentTime + .01, ...a); }
+function lbSnd(name, ...a){ if (!sndReady()) return; const f = LB_SND[LB.ci]?.[name]; if (f) f(A().currentTime + .01, ...a); }
 // 大图打开时，章节环境声压低、变闷，让位给大图的声音；关掉后恢复
 function sndDuck(on){
   if (LB.ducked===on) return; LB.ducked = on;
-  if (!SND.on || !SND.ac) return;
+  if (!sndReady()) return;
   const t = A().currentTime;
   if (SND.amb) SND.amb.g.gain.setTargetAtTime((on ? .3 : 1)*THEME.presence, t, .35);
   if (on) SND.lp.frequency.setTargetAtTime(750, t, .35); else SND.tone = -1;
@@ -1409,7 +1631,7 @@ function stopAmb(a, fade){
 }
 // 首页不放环境声（让悬停音更清楚），进章节淡入那一章的声音
 function sndScene(){
-  if (!SND.on) return;
+  if (!sndReady()) return;
   const want = route.view==="chapter" ? route.ci : -1;
   if (want===SND.cur) return;
   SND.cur = want; stopAmb(SND.amb, .35); SND.amb = null;
@@ -1419,44 +1641,72 @@ function sndScene(){
   SND.amb = { g, nodes:sc.nodes, tick:sc.tick, next:ac.currentTime + .3 };
 }
 function sndTick(){
-  const a = SND.amb; if (!a || !SND.on) return;
+  const a = SND.amb; if (!a || !sndReady()) return;
   const now = A().currentTime;
   if (a.next < now) a.next = now + .05;                 // 切走标签页回来时不补放积压的音
   while (a.next < now + .25) a.next = a.tick(a.next);
 }
 function sndHover(ci, pi){
-  if (!SND.on) return; const t = A().currentTime;
+  if (!sndReady()) return; const t = A().currentTime;
   if (t - SND.last < .05) return; SND.last = t;
   VOICE[ci](hz(mod(ci*2 + pi*3, 10)), t, SND.fx);
 }
 // 照片环每走一格响一个音，滚动起来就是一段旋律；滚得越快越响
 function sndStep(dir, speed){
-  if (!SND.on) return;
+  if (!sndReady()) return;
   const MEL = RING_SND.melody;
   SND.step += dir; RING_SND.step(hz(MEL[mod(SND.step, MEL.length)] + NS), A().currentTime, SND.fx, Math.min(.28, .08 + speed*.25));
 }
-function sndSwoosh(){ if (SND.on) V.swoosh(A().currentTime, SND.fx); }
-function sndChime(i){ if (SND.on) RING_SND.chime(hz(i*2 + 2, 1), A().currentTime, SND.fx, .1); }
-function sndTone(k){ if (!SND.on || Math.abs(k - SND.tone) < .01) return; SND.tone = k; SND.lp.frequency.setTargetAtTime(900 + k*4200, A().currentTime, .15); }
+function sndSwoosh(){ if (sndReady()) V.swoosh(A().currentTime, SND.fx); }
+function sndChime(i){ if (sndReady()) RING_SND.chime(hz(i*2 + 2, 1), A().currentTime, SND.fx, .1); }
+function sndTone(k){ if (!sndReady() || Math.abs(k - SND.tone) < .01) return; SND.tone = k; SND.lp.frequency.setTargetAtTime(900 + k*4200, A().currentTime, .15); }
 
 const sndBtn = $("#snd");
 sndBtn.addEventListener("click", ()=>setSound(!SND.on));
-// 浏览器只允许在用户点击/按键后出声：第一次交互时自动打开声音（滚轮不算，浏览器不认）
+function syncSoundUI(){
+  sndBtn.setAttribute("aria-pressed", String(SND.on));
+  sndBtn.dataset.playing = String(!!sndReady());
+  sndBtn.setAttribute("aria-label", SND.on ? "声音已开启，点击关闭" : "声音已关闭，点击开启");
+  sndBtn.title = SND.on ? (sndReady() ? "声音已开启" : "声音已开启，首次轻点后开始播放") : "声音已关闭";
+}
+function activateSound(){
+  if (!sndReady() || SND.active) return;
+  SND.active = true;
+  const ac = A();
+  SND.out.gain.cancelScheduledValues(ac.currentTime); SND.out.gain.setTargetAtTime(.9, ac.currentTime, .15);
+  SND.cur = -2; sndScene();
+  if (LB.open){ LB.ducked = false; sndDuck(true); }
+  V.bell(hz(4,1), ac.currentTime + .05, SND.fx, .06);
+  syncSoundUI();
+}
+function resumeSound(){
+  if (!SND.on) return;
+  try {
+    if (!SND.ac){
+      sndInit();
+      A().addEventListener("statechange", ()=>{
+        if (A().state==="running") activateSound();
+        else SND.active = false;
+        syncSoundUI();
+      });
+    }
+    if (A().state==="running") activateSound();
+    else A().resume().then(activateSound).catch(()=>syncSoundUI());
+  } catch(e){ SND.on = false; syncSoundUI(); }
+}
+// 默认开启。若浏览器暂缓自动播放，在首次有效手势中恢复；手动关掉后不会再次自动开启。
+// touchend / pointerup 也监听，兼容必须在触摸结束后才允许播放的移动浏览器。
 const sndFirst = e=>{
-  ["pointerdown","keydown"].forEach(n=>removeEventListener(n, sndFirst, true));
-  if (!SND.on && !(e.target instanceof Node && sndBtn.contains(e.target))) setSound(true);   // 第一下就点 Sound 时交给按钮自己处理
+  if (SND.on && !sndReady() && !(e.target instanceof Node && sndBtn.contains(e.target))) resumeSound();
 };
-["pointerdown","keydown"].forEach(n=>addEventListener(n, sndFirst, true));
+["pointerdown","pointerup","touchend","keydown"].forEach(n=>addEventListener(n, sndFirst, { capture:true, passive:true }));
 function setSound(on){
-  SND.on = on; sndBtn.setAttribute("aria-pressed", String(SND.on));
-  if (SND.on){
-    if (!SND.ac) sndInit();
-    const ac = A(); ac.resume();
-    SND.out.gain.cancelScheduledValues(ac.currentTime); SND.out.gain.setTargetAtTime(.9, ac.currentTime, .15);
-    SND.cur = -2; sndScene(); V.bell(hz(4,1), ac.currentTime + .05, SND.fx, .06);
-  } else {
+  SND.on = on; syncSoundUI();
+  if (on) resumeSound();
+  else if (SND.ac){
+    SND.active = false;
     const ac = A(); SND.out.gain.setTargetAtTime(0, ac.currentTime, .12);
-    setTimeout(()=>{ if (SND.on) return; stopAmb(SND.amb, .01); SND.amb = null; SND.cur = -2; ac.suspend(); }, 600);
+    setTimeout(()=>{ if (SND.on) return; stopAmb(SND.amb, .01); SND.amb = null; SND.cur = -2; ac.suspend().catch(()=>{}); }, 600);
   }
 }
 
@@ -1464,37 +1714,56 @@ function setSound(on){
 const route = { view:"home", key:"" };
 const curtain = $("#curtain");
 function parse(){
+  const path = location.hash || "#/";
+  if (/^#\/about\/?$/.test(path)) return { view:"about", key:"about", photo:-1, path };
   const m = location.hash.match(/^#\/ch\/(\d+)(?:\/(\d+))?(\/view)?/);
   if (m){
     const ci = Math.min(CHAPTERS.length, Math.max(1, +m[1])) - 1, focus = +(m[2]||0), n = CHAPTERS[ci].photos.length;
-    return { view:"chapter", ci, focus, photo: m[3] && focus ? Math.min(n, focus) - 1 : -1, key:`ch${ci}` };   // /view：打开这一张的大图
+    return { view:"chapter", ci, focus, photo: m[3] && focus ? Math.min(n, focus) - 1 : -1, key:`ch${ci}`, path };   // /view：打开这一张的大图
   }
-  return { view:"home", key:"home", photo:-1 };
+  return { view:"home", key:"home", photo:-1, path };
 }
 function show(r){
+  const wasAbout = route.view==="about";
+  if (r.view==="about" && !wasAbout && route.key){
+    authorReturn = route.path || "#/"; $("#authorBack").href = authorReturn;
+  }
   if (LB.open) lbReset();
+  if (r.view!=="home"){
+    clearTouchPreview(false); clearTimeout(P.timer); ring.hover = false;
+    P.mx = P.my = -1e4;
+  }
   $("#home").hidden = r.view!=="home";
   $("#chapter").hidden = r.view!=="chapter";
-  document.querySelectorAll("[data-nav]").forEach(a=>a.setAttribute("aria-current", String(a.dataset.nav===(r.view==="home"?"home":"ch"))));
+  $("#about").hidden = r.view!=="about";
+  document.querySelectorAll("[data-nav]").forEach(a=>a.setAttribute("aria-current", String(a.dataset.nav===(r.view==="chapter"?"ch":r.view))));
   if (r.view==="chapter") buildChapter(r.ci, r.focus);
-  else if (P.key){ clearTimeout(P.timer); setShape(0, null, false); setCaption(-1); }   // 回首页时粒子字恢复成 JAPAN
+  else if (r.view==="home" && P.key){ clearTimeout(P.timer); setShape(0, null, false); setCaption(-1); }   // 回首页时粒子字恢复成 JAPAN
   Object.assign(route, r);
   sndScene();
+  if (r.view==="about"){
+    $("#about").scrollTop = 0; $("#authorStatus").textContent = "";
+    $("#authorName").focus({ preventScroll:true });
+  } else if (wasAbout){
+    (authorTrigger?.getClientRects().length ? authorTrigger : $("#logo")).focus({ preventScroll:true });
+  }
 }
 let busy = false, goTok = 0;
 async function go(){
   const r = parse(), tok = ++goTok;
   if (r.key===route.key && r.view==="home") return;
-  if (r.key===route.key && !busy){ lbSync(r); return; }       // 同一章里只是开关大图，不走幕布转场
+  if (r.key===route.key && !busy){ Object.assign(route,r); if (r.view==="chapter") lbSync(r); return; }       // 同一章里只是开关大图，不走幕布转场
   if (reduce || busy){ show(r); if (r.photo >= 0) lbOpen(r.ci, r.photo, false); return; }
   busy = true; sndSwoosh();
-  curtain.querySelector("b").textContent = r.view==="chapter" ? CHAPTERS[r.ci].en : HOME.word;
+  curtain.classList.add("active");
+  curtain.querySelector("b").textContent = r.view==="chapter" ? CHAPTERS[r.ci].en : r.view==="about" ? "About" : HOME.word;
   const opt = { duration:520, easing:EASE, fill:"forwards" };
   await curtain.animate([{transform:"translateY(100%)"},{transform:"translateY(0)"}], opt).finished;
   if (tok===goTok) show(r);                                  // 转场途中网址又变了：以最新的为准，不要把它重置掉
   await new Promise(res=>setTimeout(res,120));
   await curtain.animate([{transform:"translateY(0)"},{transform:"translateY(-100%)"}], opt).finished;
   curtain.getAnimations().forEach(a=>a.cancel());
+  curtain.classList.remove("active");
   busy = false;
   if (tok===goTok && r.photo >= 0) lbOpen(r.ci, r.photo, false);           // 从别处直接跳到某张大图：幕布拉开后再显影
 }
@@ -1504,7 +1773,7 @@ addEventListener("hashchange", go);
 function loop(t){
   if (route.view==="home"){
     // 没人操作 2 秒后，照片环自己慢慢转；鼠标停在照片上时暂停
-    if (!reduce && !ring.hover && t - ring.lastInput > 2000) ring.tu += THEME.motion.drift;
+    if (!reduce && !ring.hover && !ring.preview && !homeTouch && t - ring.lastInput > 2000) ring.tu += THEME.motion.drift;
     ring.u += (ring.tu - ring.u)*THEME.motion.follow;
     const cell = Math.floor(ring.u);
     if (cell!==ring.cell){ if (ring.cell!==undefined) sndStep(Math.sign(cell - ring.cell), Math.abs(ring.tu - ring.u)); ring.cell = cell; }
@@ -1523,15 +1792,17 @@ function lbResize(){ lbLayout(); lpHide(); if (LB.phase==="shown") lbDrawDev(1);
 (async function init(){
   document.title = THEME.title;
   $("#logo").innerHTML = `${THEME.logo[0]}<span class="box">${THEME.logo[1]}</span>`;
-  $("#year").textContent = THEME.year;
-  $("#foot").innerHTML = `<span>${THEME.journal}</span><span>${STATS}</span><span>${THEME.year}</span>`;
-  subEl.textContent = HOME.sub; lineEl.textContent = HOME.line; cv.setAttribute("aria-label", HOME.word);
+  initAuthor();
+  updateTouchGuide(); syncSoundUI();
+  setCaption(-1); cv.setAttribute("aria-label", HOME.word);
   layoutRing();
-  try { await document.fonts.load(`${THEME.font.weight} 100px "${THEME.font.family}"`); } catch(e){}
   sampleDots(true);
   const r = parse(); show(r);
+  setSound(THEME.soundOn);
   requestAnimationFrame(loop);
   if (r.photo >= 0) requestAnimationFrame(()=>requestAnimationFrame(()=>lbOpen(r.ci, r.photo, false)));
+  // 先开放交互；字体加载完成后按当前预览重采样，不重置用户已经选中的照片。
+  try { await document.fonts.load(`${THEME.font.weight} 100px "${THEME.font.family}"`); sampleDots(false); } catch(e){}
 })();
 </script>
 </body>
