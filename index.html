@@ -102,7 +102,6 @@ a{color:inherit;text-decoration:none}
 .fig figcaption{display:flex;align-items:baseline;gap:14px;font-size:13px}
 .fig .no{font-size:11px;color:var(--accent);font-weight:600;flex:none}
 .fig .cap{font-family:"Noto Sans SC",sans-serif;color:var(--ink)}
-.fig .cred{display:block;font-size:10px;color:var(--muted);margin-top:4px;font-stretch:125%;letter-spacing:.06em}
 /* 风格层：canvas 盖在原图上，切换时橙色色块从下往上擦过 */
 .fig .fx{position:absolute;inset:0;width:100%;height:100%;opacity:0;will-change:transform;pointer-events:none}
 .fig.styled .fx{opacity:1}
@@ -113,8 +112,7 @@ a{color:inherit;text-decoration:none}
 #chapter:not([data-style="orig"]) .fig.keep .tag{opacity:1}
 .fig .pal{position:absolute;left:0;right:0;bottom:0;display:flex;z-index:2;transform:translateY(101%);transition:transform .6s var(--ease) .15s}
 #chapter[data-style="block"] .fig.styled .pal{transform:none}
-.fig .pal i{height:30px;min-width:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--sw);
-  font-style:normal;font-size:9px;font-weight:600;font-stretch:125%;letter-spacing:.06em}
+.fig .pal i{height:30px;min-width:0;background:var(--sw)}
 .ch-prog{position:absolute;left:24px;right:24px;bottom:118px;height:1px;background:var(--line)}
 .ch-prog b{position:absolute;inset:0;background:var(--accent);transform-origin:left;transform:scaleX(0)}
 .ch-foot{position:absolute;left:0;right:0;bottom:60px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:0 24px;font-size:12px}
@@ -132,6 +130,78 @@ a{color:inherit;text-decoration:none}
 .foot{position:absolute;left:0;right:0;bottom:0;height:44px;border-top:1px solid var(--line);display:grid;
   grid-template-columns:1fr auto 1fr;align-items:center;padding:0 24px;font-size:10px;color:var(--muted);letter-spacing:.12em}
 .foot span:last-child{justify-self:end}
+
+/* ---------- 单张大图：点阵显影 + 放大镜 ---------- */
+.fig .pic{cursor:zoom-in}
+.fig .pic:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.lb{position:fixed;inset:0;z-index:40;pointer-events:none;--side:300px}
+.lb.open{pointer-events:auto}
+.lb-veil{position:absolute;inset:0;background:var(--bg);opacity:0;transition:opacity .5s var(--ease)}
+.lb.open .lb-veil{opacity:1}
+.lb-dev{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.lb-stage{position:absolute;top:0;left:0;bottom:0;right:var(--side);touch-action:none}
+.lb-side{position:absolute;top:0;right:0;bottom:0;width:var(--side);background:var(--bg);border-left:1px solid var(--line);
+  padding:22px 24px;display:flex;flex-direction:column;gap:20px;overflow-y:auto;transform:translateX(100%);visibility:hidden;
+  transition:transform .6s var(--ease),visibility 0s .6s}
+.lb.open .lb-side{transform:none;visibility:visible;transition:transform .6s var(--ease) .15s,visibility 0s}
+.lb-top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:11px}
+.lb-top .ch{color:var(--accent);font-weight:600;letter-spacing:.14em}
+.lb-top .ch span{font-family:"Noto Sans SC",sans-serif;font-stretch:100%;margin-left:6px;letter-spacing:.04em}
+.lb-top button{flex:none;white-space:nowrap;font-size:11px;font-weight:600;letter-spacing:.1em;padding:6px 0;transition:color .25s}
+.lb-top button:hover{color:var(--accent)}
+.lb-no{font-size:44px;font-weight:800;line-height:1;letter-spacing:-.01em}
+.lb-no span{color:var(--muted);font-weight:500}
+.lb-cap{font-family:"Noto Sans SC",sans-serif;font-size:17px;line-height:1.6;margin-top:-6px}
+.lb-mode{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--accent);margin-top:-10px}
+.lb-mode span{font-family:"Noto Sans SC",sans-serif;font-stretch:100%;color:var(--muted);font-weight:500;letter-spacing:.02em;margin-left:8px}
+.lb-lbl{display:flex;justify-content:space-between;font-size:10px;font-weight:600;letter-spacing:.14em;color:var(--muted);margin-bottom:8px}
+.lb-read{height:64px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px;padding:8px 10px;background:#eae4dc;
+  transition:background-color .12s,color .12s}
+.lb-read b{font-size:20px;font-weight:700;font-stretch:125%;letter-spacing:.04em}
+.lb-read i{font-style:normal;font-size:10px;opacity:.7;letter-spacing:.06em;white-space:nowrap}
+.lb-read.empty b{font-family:"Noto Sans SC",sans-serif;font-stretch:100%;font-size:12px;font-weight:500;letter-spacing:0;color:var(--muted)}
+.lb-pal{display:flex;flex-direction:column;gap:6px}
+.lb-pal button{display:grid;grid-template-columns:28px 1fr auto;align-items:center;gap:10px;font-size:12px;text-align:left;padding:2px 0}
+.lb-pal i{height:20px;box-shadow:inset 0 0 0 1px var(--line)}
+.lb-pal b{font-weight:600;font-stretch:125%;letter-spacing:.05em;transition:color .2s}
+.lb-pal span{color:var(--muted);font-size:11px}
+.lb-pal button:hover b{color:var(--accent)}
+.lb-cred{font-size:11px;line-height:1.6;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+.lb-cred em{display:block;font-style:normal;color:var(--accent);font-weight:600;letter-spacing:.12em;font-size:10px;margin-bottom:2px}
+.lb-navs{display:flex;gap:8px}
+.lb-navs button{flex:1;border:1px solid var(--line);padding:10px 0;font-size:11px;font-weight:600;letter-spacing:.1em;
+  transition:background .2s,color .2s,border-color .2s}
+.lb-navs button:hover{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.lb-keys{margin-top:auto;font-family:"Noto Sans SC",sans-serif;font-size:11px;color:var(--muted);line-height:1.9}
+.lb-keys kbd{font:600 10px var(--display);color:var(--ink);border:1px solid var(--line);padding:0 5px;margin-right:6px}
+/* 放大镜：四个裁切角标 + 留空的十字准星，下面挂一条色号标签 */
+.loupe{position:fixed;left:0;top:0;width:var(--L,210px);height:var(--L,210px);z-index:41;pointer-events:none;opacity:0;transition:opacity .2s}
+.loupe.on{opacity:1}
+.lp-in{position:absolute;inset:0;transform:scale(.82);transition:transform .3s var(--ease)}
+.loupe.on .lp-in{transform:none}
+.lp-in canvas{width:100%;height:100%;display:block;box-shadow:0 14px 34px rgba(18,18,18,.22)}
+.lp-k{position:absolute;width:18px;height:18px;border:0 solid var(--accent)}
+.lp-k.tl{left:-7px;top:-7px;border-width:2px 0 0 2px}
+.lp-k.tr{right:-7px;top:-7px;border-width:2px 2px 0 0}
+.lp-k.bl{left:-7px;bottom:-7px;border-width:0 0 2px 2px}
+.lp-k.br{right:-7px;bottom:-7px;border-width:0 2px 2px 0}
+.lp-x{position:absolute;left:50%;top:50%;width:24px;height:24px;transform:translate(-50%,-50%);filter:drop-shadow(0 0 1px rgba(255,251,247,.9))}
+.lp-x::before,.lp-x::after{content:"";position:absolute}
+.lp-x::before{left:0;right:0;top:11px;height:2px;background:linear-gradient(90deg,var(--accent) 0 8px,transparent 8px 16px,var(--accent) 16px)}
+.lp-x::after{top:0;bottom:0;left:11px;width:2px;background:linear-gradient(180deg,var(--accent) 0 8px,transparent 8px 16px,var(--accent) 16px)}
+.lp-t{position:absolute;left:-7px;top:calc(100% + 12px);display:flex;align-items:center;gap:8px;background:var(--ink);color:var(--bg);
+  font-size:10px;font-weight:700;letter-spacing:.08em;padding:5px 8px 5px 6px;white-space:nowrap}
+.lp-t i{width:12px;height:12px;box-shadow:0 0 0 1px rgba(255,251,247,.3)}
+.lp-t em{font-style:normal;color:var(--accent)}
+@media (max-width:700px){
+  .lb{--side:0px}
+  .lb-stage{right:0;bottom:42%}
+  .lb-side{top:auto;left:0;width:auto;height:42%;border-left:0;border-top:1px solid var(--line);padding:16px;gap:14px;transform:translateY(100%)}
+  .lb-no{font-size:30px}
+  .lb-cap{font-size:15px}
+  .lb-keys{display:none}
+}
+@media (prefers-reduced-motion:reduce){ .lb-veil,.lb-side,.lp-in{transition:none} }
 
 /* ---------- curtain ---------- */
 .curtain{position:fixed;inset:0;background:var(--accent);z-index:50;transform:translateY(100%);pointer-events:none;
@@ -207,6 +277,33 @@ a{color:inherit;text-decoration:none}
   <div class="foot x"><span>A travel journal</span><span>25 photos · 6 chapters</span><span>2026</span></div>
 </section>
 
+<div class="lb" id="lb" role="dialog" aria-modal="true" aria-label="单张大图" aria-hidden="true">
+  <div class="lb-veil"></div>
+  <canvas class="lb-dev" id="lbDev"></canvas>
+  <div class="lb-stage" id="lbStage"></div>
+  <aside class="lb-side">
+    <div class="lb-top"><span class="ch x" id="lbCh"></span><button class="x" id="lbClose" type="button">Close ✕</button></div>
+    <div class="lb-no x" id="lbNo"></div>
+    <p class="lb-cap" id="lbCap"></p>
+    <p class="lb-mode x" id="lbMode"></p>
+    <div>
+      <div class="lb-lbl x"><span>Under loupe</span><span id="lbXY"></span></div>
+      <div class="lb-read empty" id="lbRead"><b id="lbHex"></b><i id="lbRgb"></i></div>
+    </div>
+    <div>
+      <div class="lb-lbl x"><span>Palette · 5</span><span>Share</span></div>
+      <div class="lb-pal" id="lbPal"></div>
+    </div>
+    <div class="lb-cred" id="lbCred" hidden></div>
+    <div class="lb-navs"><button class="x" id="lbPrev" type="button">← Prev</button><button class="x" id="lbNext" type="button">Next →</button></div>
+    <div class="lb-keys"><kbd>← →</kbd>上一张 / 下一张<br><kbd>滚轮</kbd>放大镜倍数<br><kbd>1–4</kbd>切换风格<br><kbd>Esc</kbd>关闭</div>
+  </aside>
+</div>
+<div class="loupe" id="loupe" aria-hidden="true">
+  <div class="lp-in"><canvas id="loupeCv"></canvas><i class="lp-k tl"></i><i class="lp-k tr"></i><i class="lp-k bl"></i><i class="lp-k br"></i><i class="lp-x"></i></div>
+  <b class="lp-t x"><i id="lpSw"></i><span id="lpHex"></span><em id="lpZ"></em></b>
+</div>
+
 <div class="curtain" id="curtain" aria-hidden="true"><b></b></div>
 
 <script>
@@ -223,7 +320,7 @@ const CHAPTERS = [
   { en:"Neon", zh:"霓虹", line:"天黑以后，招牌替整条街说话。", photos:[
     { src:"neon-street", w:1600, h:1067, cap:"霓虹把街道折成了峡谷。" },
     { src:"neon-signs", w:1600, h:1067, cap:"招牌比人还热闹。" },
-    { src:"style-neon-canyon", w:1200, h:1600, cap:"把一条街，提炼成几道颜色。", credit:"photo-abstract-editorial · @AM." },
+    { src:"style-neon-canyon", w:1200, h:1600, cap:"把一条街，提炼成几道颜色。", credit:"photo-abstract-editorial · @AM.", license:"CC BY-NC-SA" },
     { src:"drugstore", w:1067, h:1600, cap:"黄色的药妆店，是城市的路标。" },
   ]},
   { en:"Vermilion", zh:"朱红", line:"朱红色，是这里最常见的祝福。", photos:[
@@ -285,9 +382,7 @@ function tileEl(t){
   const ch = CHAPTERS[t.ci], b = document.createElement("a");
   b.className = "tile"; b.href = `#/ch/${t.ci+1}/${t.pi+1}`;
   b.setAttribute("aria-label", `${ch.zh}：${t.p.cap}`);
-  const label = t.p.credit
-    ? `<em>Style skill</em><b>${t.p.credit.split(" · ")[0]}<span>${ch.zh} · ${pad2(t.pi+1)}</span></b>`
-    : `<em>CH.${pad2(t.ci+1)} — ${pad2(t.pi+1)}</em><b>${ch.en}<span>${ch.zh}</span></b>`;
+  const label = `<em>CH.${pad2(t.ci+1)} — ${pad2(t.pi+1)}</em><b>${ch.en}<span>${ch.zh}</span></b>`;
   b.innerHTML = `<img src="photos/sq/${t.p.src}.jpg" alt="" decoding="async"><span class="ov x">${label}</span>`;
   b.addEventListener("mouseenter",()=>{ ring.hover = true; hoverChapter(t.ci, t.p.src); sndHover(t.ci, t.pi); });
   b.addEventListener("mouseleave",()=>{ ring.hover = false; hoverChapter(-1); });
@@ -506,10 +601,10 @@ function buildChapter(ci, focus){
   $("#chNext").href = `#/ch/${nx+1}`; $("#chNext").innerHTML = `<span class="lbl">${CHAPTERS[nx].en} / </span>Next`;
   chT.innerHTML = ch.photos.map((p,i)=>`
     <figure class="fig${p.credit ? " keep" : ""}" data-ar="${p.w/p.h}" data-src="${p.src}">
-      <div class="pic"><img src="photos/full/${p.src}.jpg" alt="${p.cap}" decoding="async" draggable="false"><canvas class="fx"></canvas>
+      <div class="pic" tabindex="0" role="button" aria-label="打开大图：${p.cap}"><img src="photos/full/${p.src}.jpg" alt="${p.cap}" decoding="async" draggable="false"><canvas class="fx"></canvas>
         ${p.credit ? `<span class="tag x">Original work<span>原作保留</span></span>` : ""}<div class="pal"></div><i class="wipe"></i></div>
       <figcaption><span class="no x">${pad2(i+1)} / ${pad2(ch.photos.length)}</span>
-        <span class="cap">${p.cap}${p.credit ? `<span class="cred">Style skill · ${p.credit}</span>` : ""}</span></figcaption>
+        <span class="cap">${p.cap}</span></figcaption>
     </figure>`).join("");
   requestAnimationFrame(()=>{
     measureChapter();
@@ -551,12 +646,27 @@ function renderChapter(){
   sndTone(CH.max ? CH.x/CH.max : .5);
 }
 chV.addEventListener("wheel", e=>{ e.preventDefault(); CH.tx = Math.max(0, Math.min(CH.max, CH.tx + e.deltaY + e.deltaX)); }, { passive:false });
-chV.addEventListener("pointerdown", e=>{ CH.drag = { x:e.clientX, tx:CH.tx }; chV.classList.add("drag"); chV.setPointerCapture(e.pointerId); });
+chV.addEventListener("pointerdown", e=>{
+  const pic = e.target.closest(".pic");
+  CH.drag = { x:e.clientX, y:e.clientY, tx:CH.tx, t:performance.now(), pic };
+  chV.classList.add("drag"); chV.setPointerCapture(e.pointerId);
+  if (pic){ const i = [...chT.children].indexOf(pic.closest(".fig")); if (i >= 0) lbItem(route.ci, i).catch(()=>{}); }   // 按下就开始准备大图
+});
 chV.addEventListener("pointermove", e=>{ if (!CH.drag) return; CH.tx = Math.max(0, Math.min(CH.max, CH.drag.tx - (e.clientX - CH.drag.x)*1.4)); });
-const endDrag = ()=>{ CH.drag = null; chV.classList.remove("drag"); };
+// 移动不到 6px、很快松开才算"点开"，否则就是拖动
+const endDrag = e=>{
+  const d = CH.drag; CH.drag = null; chV.classList.remove("drag");
+  if (d?.pic && e.type==="pointerup" && Math.hypot(e.clientX - d.x, e.clientY - d.y) < 6 && performance.now() - d.t < 400) lbFromPic(d.pic);
+};
 chV.addEventListener("pointerup", endDrag); chV.addEventListener("pointercancel", endDrag);
+chT.addEventListener("keydown", e=>{ const pic = e.target.closest(".pic"); if (pic && (e.key==="Enter" || e.key===" ")){ e.preventDefault(); lbFromPic(pic); } });
+// Tab 键聚焦到某张照片时，把它滚到中间（不让浏览器自己去滚 overflow 容器）
+chT.addEventListener("focusin", e=>{
+  chV.scrollLeft = 0;
+  const f = CH.figs.find(f=>f.el.contains(e.target)); if (f) CH.tx = Math.max(0, Math.min(CH.max, f.c - chV.clientWidth/2));
+});
 addEventListener("keydown", e=>{
-  if (route.view!=="chapter") return;
+  if (route.view!=="chapter" || LB.open) return;
   const vw = chV.clientWidth*.6;
   if (e.key==="ArrowRight"||e.key==="ArrowDown") CH.tx = Math.min(CH.max, CH.tx + vw);
   if (e.key==="ArrowLeft"||e.key==="ArrowUp") CH.tx = Math.max(0, CH.tx - vw);
@@ -655,7 +765,7 @@ async function paintFx(f){
   }
   if (FX.style!==id) return;
   const g = f.fx.getContext("2d"); g.clearRect(0,0,W,H); g.drawImage(out.canvas, 0, 0);
-  f.pal.innerHTML = out.palette ? out.palette.map(p=>`<i style="--sw:${p.hex};flex:${Math.max(.6, p.share*5).toFixed(2)};color:${p.light ? "#121212" : "#FFFBF7"}" title="${p.hex}">${p.share > .14 ? p.hex : ""}</i>`).join("") : "";
+  f.pal.innerHTML = out.palette ? out.palette.map(p=>`<i style="--sw:${p.hex};flex:${Math.max(.6, p.share*5).toFixed(2)}" title="${p.hex}"></i>`).join("") : "";
   f.el.classList.add("styled");
 }
 function markStyle(id){ stylesEl.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", String(b.dataset.s===id))); }
@@ -680,6 +790,382 @@ async function setStyle(id, animate){
   FX.busy = false;
   if (FX.queued){ const q = FX.queued; FX.queued = null; setStyle(q, animate); }
 }
+
+/* ---------------- 单张大图：缩略图里飞出点阵 → 由粗到细显影 → 原图；放大镜看细节、取色 ---------------- */
+const lb = $("#lb"), lbCv = $("#lbDev"), lbG = lbCv.getContext("2d"), lbStage = $("#lbStage");
+const loupe = $("#loupe"), lpCv = $("#loupeCv"), lpG = lpCv.getContext("2d");
+const LB = { open:false, closing:false, busy:false, ci:0, i:0, item:null, rect:null, src:null, levels:[], dots:[], k:0,
+  step:-1, phase:"idle", pushed:false, pushNext:false, ducked:false };
+const LB_STEPS = [26, 18, 13, 9.5, 7, 5.2, 4];   // 点阵从粗到细的格距，最后一级之后淡入照片
+const LB_ITEMS = new Map();
+let lbTok = 0;
+const dprOf = () => Math.min(2, devicePixelRatio || 1);
+const clamp01 = v => v<0 ? 0 : v>1 ? 1 : v;
+const easeIO = t => t<.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2, 3)/2;
+const easeSine = t => -(Math.cos(Math.PI*t) - 1)/2;
+const easeBack = t => 1 + 2.1*Math.pow(t-1, 3) + 1.1*Math.pow(t-1, 2);   // 落位时轻轻冲过头再回来
+const hexOf = c => "#" + c.map(v=>Math.round(v).toString(16).padStart(2,"0")).join("").toUpperCase();
+const sizeOf = c => [c.naturalWidth || c.width, c.naturalHeight || c.height];
+const curStyle = () => FX.queued || FX.style;
+
+// 一半一半往下缩的图像金字塔：取某个格子的平均色时，从最接近的一层缩，颜色才准
+function pyramid(src){
+  const out = [src]; let c = src, [w, h] = sizeOf(src);
+  while (Math.min(w, h) > 48){
+    w = Math.ceil(w/2); h = Math.ceil(h/2);
+    const n = document.createElement("canvas"); n.width = w; n.height = h; n.getContext("2d").drawImage(c, 0, 0, w, h);
+    out.push(n); c = n;
+  }
+  return out;
+}
+function shrink(pyr, w, h){
+  let s = pyr[0];
+  for (const c of pyr){ const [cw, ch] = sizeOf(c); if (cw >= w*2 && ch >= h*2) s = c; }
+  const g = document.createElement("canvas").getContext("2d", { willReadFrequently:true });
+  g.canvas.width = w; g.canvas.height = h; g.imageSmoothingQuality = "high"; g.drawImage(s, 0, 0, w, h);
+  return g.getImageData(0, 0, w, h).data;
+}
+function lbPalette(pyr){                       // 原片的 5 个主色（k-means，按亮度分位数起步）
+  const d = shrink(pyr, 48, 48), px = [];
+  for (let i=0; i<d.length; i+=4) px.push([d[i], d[i+1], d[i+2]]);
+  px.sort((a,b)=>lumOf(...a) - lumOf(...b));
+  let C = [.08,.3,.5,.7,.92].map(q=>[...px[Math.floor(q*(px.length-1))]]), n = [];
+  for (let it=0; it<10; it++){
+    const s = C.map(()=>[0,0,0]); n = C.map(()=>0);
+    for (const p of px){
+      let bi = 0, bd = 1e9;
+      C.forEach((c,j)=>{ const e = (c[0]-p[0])**2 + (c[1]-p[1])**2 + (c[2]-p[2])**2; if (e < bd){ bd = e; bi = j; } });
+      s[bi][0] += p[0]; s[bi][1] += p[1]; s[bi][2] += p[2]; n[bi]++;
+    }
+    C = C.map((c,j)=>n[j] ? s[j].map(v=>v/n[j]) : c);
+  }
+  return C.map((c,j)=>({ rgb:c.map(Math.round), share:n[j]/px.length })).sort((a,b)=>b.share - a.share);
+}
+// 一张照片要用的东西：原图、像素（取色用）、金字塔、主色。按下鼠标时就开始准备，松手时多半已经好了
+function lbItem(ci, i){
+  const p = CHAPTERS[ci].photos[i];
+  if (!LB_ITEMS.has(p.src)){
+    LB_ITEMS.set(p.src, (async ()=>{
+      const img = new Image(); img.src = `photos/full/${p.src}.jpg`; await img.decode();
+      const W = img.naturalWidth, H = img.naturalHeight, g = document.createElement("canvas").getContext("2d", { willReadFrequently:true });
+      g.canvas.width = W; g.canvas.height = H; g.drawImage(img, 0, 0);
+      const pyr = pyramid(img);
+      return { p, img, W, H, px:g.getImageData(0, 0, W, H).data, pyr, pal:lbPalette(pyr), styled:new Map() };
+    })().catch(e=>{ LB_ITEMS.delete(p.src); throw e; }));
+    if (LB_ITEMS.size > 8) LB_ITEMS.delete(LB_ITEMS.keys().next().value);
+  }
+  return LB_ITEMS.get(p.src);
+}
+function lbRect(it){
+  const r = lbStage.getBoundingClientRect(), pad = innerWidth <= 700 ? 16 : 48;
+  const k = Math.min((r.width - pad*2)/it.W, (r.height - pad*2)/it.H), w = it.W*k, h = it.H*k;
+  return { x:r.left + (r.width - w)/2, y:r.top + (r.height - h)/2, w, h };
+}
+// 章节当前是什么风格，大图就显影成什么风格；原作保留的风格作品不处理
+function lbSource(it, R){
+  const id = curStyle();
+  if (id==="orig" || it.p.credit) return { cv:it.img, pyr:it.pyr };
+  const d = dprOf(), cap = Math.min(1, 1200/(Math.max(R.w, R.h)*d));
+  const W = Math.round(R.w*d*cap), H = Math.round(R.h*d*cap), key = `${id}|${W}x${H}`;
+  if (!it.styled.has(key)){ const cv = FX_FN[id](it.img, W, H).canvas; it.styled.clear(); it.styled.set(key, { cv, pyr:pyramid(cv) }); }
+  return it.styled.get(key);
+}
+function lbLayout(){
+  const d = dprOf(); lbCv.width = innerWidth*d; lbCv.height = innerHeight*d; lbG.setTransform(d, 0, 0, d, 0, 0);
+  if (!LB.item) return;
+  LB.rect = lbRect(LB.item); LB.src = lbSource(LB.item, LB.rect); LB.levels = [];
+}
+
+/* 点阵：每一级先画成一张离屏图，动画里只贴图，不逐点重画 */
+function lbGrid(j){
+  const R = LB.rect, s = LB_STEPS[j], cols = Math.max(2, Math.round(R.w/s)), rows = Math.max(2, Math.round(R.h/s));
+  return { cols, rows, cw:R.w/cols, ch:R.h/rows, d:shrink(LB.src.pyr, cols, rows) };
+}
+function lbLevel(j){
+  if (LB.levels[j]) return LB.levels[j];
+  const d = dprOf(), R = LB.rect, G = lbGrid(j), c = document.createElement("canvas");
+  c.width = Math.ceil(R.w*d); c.height = Math.ceil(R.h*d);
+  const g = c.getContext("2d"), r = Math.min(G.cw, G.ch)*.5; g.scale(d, d);
+  for (let y=0; y<G.rows; y++) for (let x=0; x<G.cols; x++){
+    const o = (y*G.cols + x)*4; g.fillStyle = `rgb(${G.d[o]},${G.d[o+1]},${G.d[o+2]})`;
+    g.beginPath(); g.arc((x+.5)*G.cw, (y+.5)*G.ch, r, 0, Math.PI*2); g.fill();
+  }
+  return LB.levels[j] = c;
+}
+function lbBakeAhead(){ for (let j=0; j<LB_STEPS.length; j++) if (!LB.levels[j]){ lbLevel(j); return; } }   // 每帧最多预画一级，不卡
+// k：0 是最粗的点阵，1 是照片。相邻两级交叉淡入，点是连续变细的，不是一级一级跳
+function lbDrawDev(k){
+  const n = LB_STEPS.length, pos = clamp01(k)*n, R = LB.rect;
+  lbG.clearRect(0, 0, innerWidth, innerHeight);
+  if (pos < n-1){
+    const a = Math.floor(pos), f = easeSine(pos - a);
+    lbG.globalAlpha = 1 - f; lbG.drawImage(lbLevel(a), R.x, R.y, R.w, R.h);
+    lbG.globalAlpha = Math.min(1, f*1.6); lbG.drawImage(lbLevel(a+1), R.x, R.y, R.w, R.h);
+  } else {
+    lbG.drawImage(lbLevel(n-1), R.x, R.y, R.w, R.h);
+    lbG.globalAlpha = easeSine(pos - (n-1)); lbG.drawImage(LB.src.cv, R.x, R.y, R.w, R.h);
+  }
+  lbG.globalAlpha = 1;
+}
+function lbThumb(){                            // 缩略图此刻在屏幕上的位置（章节页有视差，它会动）
+  const pic = CH.figs[LB.i]?.el.querySelector(".pic");
+  if (pic) return pic.getBoundingClientRect();
+  return { left:innerWidth/2 - 30, top:innerHeight/2 - 30, width:60, height:60 };
+}
+function lbDots(){                             // 聚拢用的粒子：最粗那一级点阵的每个点，都记住它在缩略图里的相对位置
+  const R = LB.rect, G = lbGrid(0), dots = [];
+  for (let y=0; y<G.rows; y++) for (let x=0; x<G.cols; x++){
+    const o = (y*G.cols + x)*4, u = (x+.5)/G.cols, v = (y+.5)/G.rows;
+    dots.push({ u:u + (Math.random()-.5)*.2, v:v + (Math.random()-.5)*.2, ex:R.x + u*R.w, ey:R.y + v*R.h,
+      c:[G.d[o], G.d[o+1], G.d[o+2]], r:Math.min(G.cw, G.ch)*.5, bend:(Math.random()-.5)*.7,
+      delay:Math.hypot(u-.5, v-.5)/.71*.75 + Math.random()*.25 });   // 离中心越远越晚出发
+  }
+  LB.dots = dots;
+}
+function lbDrawDots(t, back){
+  const T = lbThumb(), D = .34;
+  lbG.clearRect(0, 0, innerWidth, innerHeight);
+  for (const d of LB.dots){
+    const lt = clamp01((t - d.delay*D)/(1 - D));
+    const e = back ? 1 - easeIO(lt) : easeBack(lt);
+    const sx = T.left + d.u*T.width, sy = T.top + d.v*T.height;
+    // 二次贝塞尔：控制点偏到连线一侧，每个点走一条略弯的路
+    const mx = (sx + d.ex)/2 + (d.ey - sy)*d.bend*.5, my = (sy + d.ey)/2 - (d.ex - sx)*d.bend*.5;
+    const q = 1 - e, x = q*q*sx + 2*q*e*mx + e*e*d.ex, y = q*q*sy + 2*q*e*my + e*e*d.ey;
+    const tint = back ? 1 : clamp01(lt*1.6 - .1), a = back ? clamp01((1 - lt)*3) : clamp01(lt*5);
+    if (a <= 0) continue;
+    const r = d.r*(.3 + .7*clamp01(e));
+    lbG.globalAlpha = a;
+    lbG.fillStyle = `rgb(${ACCENT[0] + (d.c[0]-ACCENT[0])*tint|0},${ACCENT[1] + (d.c[1]-ACCENT[1])*tint|0},${ACCENT[2] + (d.c[2]-ACCENT[2])*tint|0})`;
+    lbG.beginPath(); lbG.arc(x, y, r, 0, Math.PI*2); lbG.fill();
+  }
+  lbG.globalAlpha = 1;
+}
+// 一段补间动画；新动画开始或大图被重置时，旧的自动作废（返回 false）
+function tween(dur, draw){
+  const tok = ++lbTok;
+  return new Promise(res=>{
+    const t0 = performance.now();
+    const f = now=>{
+      if (tok!==lbTok) return res(false);
+      const t = Math.min(1, (now - t0)/dur); draw(t);
+      t < 1 ? requestAnimationFrame(f) : res(true);
+    };
+    requestAnimationFrame(f);
+  });
+}
+function lbDevelop(k0, k1, dur){
+  const n = LB_STEPS.length;
+  return tween(dur, t=>{
+    const k = LB.k = k0 + (k1 - k0)*easeSine(t);
+    lbDrawDev(k); lbBakeAhead();
+    const s = Math.floor(k*n);
+    if (k1 > k0 && s > LB.step && s < n){ LB.step = s; lbSnd("step", s); }   // 显影每细一级响一个音
+  });
+}
+
+/* ---------------- 打开、切换、换风格、关闭 ---------------- */
+function lbFillText(){
+  const ch = CHAPTERS[LB.ci], p = ch.photos[LB.i], st = STYLES.find(s=>s.id===curStyle());
+  $("#lbCh").innerHTML = `CH.${pad2(LB.ci+1)} — ${ch.en}<span>${ch.zh}</span>`;
+  $("#lbNo").innerHTML = `${pad2(LB.i+1)}<span> / ${pad2(ch.photos.length)}</span>`;
+  $("#lbCap").textContent = p.cap;
+  $("#lbMode").innerHTML = p.credit ? `Original work<span>原作保留，不做风格处理</span>`
+    : st.id==="orig" ? `Original<span>原图</span>` : `${st.en}<span>${st.zh} · 放大镜里看原片</span>`;
+  const cr = $("#lbCred"), [work, by] = (p.credit || "").split(" · ");
+  cr.hidden = !p.credit;
+  cr.innerHTML = p.credit ? `<em class="x">Style work · 风格作品</em>${work}<br>by ${by}${p.license ? `<br>${p.license}` : ""}` : "";
+}
+function lbFillData(){
+  $("#lbPal").innerHTML = LB.item.pal.map(c=>{ const h = hexOf(c.rgb);
+    return `<button type="button" data-hex="${h}" title="复制色号"><i style="background:${h}"></i><b>${h}</b><span>${Math.round(c.share*100)}%</span></button>`; }).join("");
+  lbReadout(null);
+}
+function lbFail(){
+  $("#chLine").textContent = "大图需要用本地服务器打开这个网页（直接双击 html 时浏览器不让读取照片像素）";
+  history.replaceState(null, "", `#/ch/${LB.ci+1}`); lbReset();
+}
+async function lbOpen(ci, i, pushed){
+  if (LB.open) return;
+  Object.assign(LB, { open:true, closing:false, busy:true, ci, i, pushed, phase:"open", step:-1, k:0 });
+  lb.classList.add("open"); lb.setAttribute("aria-hidden", "false"); lbStage.style.cursor = "";
+  lbFillText();
+  let it; try { it = await lbItem(ci, i); } catch(e){ lbFail(); return; }
+  if (!LB.open || LB.closing) return;
+  LB.item = it; lbLayout(); lbFillData();
+  sndDuck(true); lbSnd("open");
+  $("#lbClose").focus({ preventScroll:true });
+  if (!reduce){ lbDots(); if (!await tween(950, t=>{ lbDrawDots(t, false); lbBakeAhead(); })) return; }
+  if (!await lbDevelop(0, 1, reduce ? 1 : 1250)) return;
+  lbShown();
+}
+function lbShown(){ LB.busy = false; LB.phase = "shown"; LB.k = 1; lbDrawDev(1); lbSnd("done"); }
+async function lbSwitch(d){
+  if (!LB.open || LB.busy || LB.closing) return;
+  const n = CHAPTERS[LB.ci].photos.length, i = mod(LB.i + d, n), next = lbItem(LB.ci, i);
+  next.catch(()=>{});
+  LB.busy = true; LB.phase = "swap"; lpHide(); lbSnd("swap");
+  history.replaceState(null, "", `#/ch/${LB.ci+1}/${i+1}/view`);   // 换张不进浏览器历史，返回键直接关掉大图
+  if (!await lbDevelop(LB.k, 0, reduce ? 1 : 420)) return;
+  let it; try { it = await next; } catch(e){ lbFail(); return; }
+  if (!LB.open || LB.closing) return;
+  LB.i = i; LB.item = it; LB.step = -1; lbLayout(); lbFillText(); lbFillData();
+  if (!await lbDevelop(0, 1, reduce ? 1 : 1000)) return;
+  lbShown();
+}
+async function lbRestyle(id){                  // 大图里按 1–4：章节背后一起换，大图退回半粗点阵再显影成新风格
+  setStyle(id, true);
+  if (!LB.open || LB.busy || LB.closing || !LB.item) return;
+  lbFillText();
+  if (LB.item.p.credit) return;
+  LB.busy = true; LB.phase = "swap"; lpHide(); lbSnd("swap");
+  if (!await lbDevelop(1, .45, reduce ? 1 : 380)) return;
+  LB.src = lbSource(LB.item, LB.rect); LB.levels = []; LB.step = Math.floor(.45*LB_STEPS.length);
+  if (!await lbDevelop(.45, 1, reduce ? 1 : 700)) return;
+  lbShown();
+}
+// 从章节页点开的大图，关闭时走浏览器的返回，历史记录保持干净；直接打开链接进来的，就原地改网址
+function lbRequestClose(){
+  if (!LB.open || LB.closing) return;
+  if (LB.pushed) history.back();
+  else { history.replaceState(null, "", `#/ch/${LB.ci+1}`); lbClose(); }
+}
+async function lbClose(){
+  if (!LB.open || LB.closing) return;
+  LB.closing = true; LB.busy = true; LB.phase = "close"; lpHide();
+  LB.refocus = lb.contains(document.activeElement);            // 侧栏收起后焦点会丢，先记下来
+  sndDuck(false); lbSnd("close");
+  const f = CH.figs[LB.i]; if (f) CH.tx = Math.max(0, Math.min(CH.max, f.c - chV.clientWidth/2));   // 章节页滚到这张，点才飞得回去
+  if (LB.item && LB.rect && !reduce){
+    if (!await lbDevelop(LB.k, 0, 450)) return;
+    lbDots(); lb.classList.remove("open");
+    if (!await tween(750, t=>lbDrawDots(t, true))) return;
+  }
+  lbReset();
+}
+function lbReset(){
+  lbTok++; sndDuck(false);
+  const back = LB.refocus || lb.contains(document.activeElement); LB.refocus = false;
+  Object.assign(LB, { open:false, closing:false, busy:false, phase:"idle", item:null, rect:null, src:null, levels:[], dots:[] });
+  lb.classList.remove("open"); lb.setAttribute("aria-hidden", "true"); lpHide();
+  lbG.clearRect(0, 0, innerWidth, innerHeight);
+  if (back) CH.figs[LB.i]?.el.querySelector(".pic")?.focus({ preventScroll:true });
+}
+function lbSync(r){                            // 同一章里网址变了：只开关、切换大图
+  if (r.photo < 0){ if (LB.open) lbClose(); return; }
+  if (!LB.open){ const pushed = LB.pushNext; LB.pushNext = false; lbOpen(r.ci, r.photo, pushed); }
+  else if (r.photo!==LB.i) lbSwitch(r.photo - LB.i);
+}
+function lbFromPic(pic){
+  if (LB.open) return;
+  const i = [...chT.children].indexOf(pic.closest(".fig")); if (i < 0) return;
+  LB.pushNext = true; location.hash = `#/ch/${route.ci+1}/${i+1}/view`;
+}
+
+/* ---------------- 放大镜：跟手带一点惯性；放大超过原图像素时直接显示像素格 ---------------- */
+const LP = { on:false, x:0, y:0, tx:0, ty:0, z:3, tz:3, touch:false, raf:0, deg:-1, at:0, hex:"" };
+function lpInside(cx, cy){ const R = LB.rect; return !!R && cx>=R.x && cx<=R.x+R.w && cy>=R.y && cy<=R.y+R.h; }
+function lpSample(nx, ny){                     // 3×3 取平均，避免取到单个噪点
+  const { px, W, H } = LB.item, c = [0,0,0];
+  for (let dy=-1; dy<=1; dy++) for (let dx=-1; dx<=1; dx++){
+    const x = Math.min(W-1, Math.max(0, Math.round(nx)+dx)), y = Math.min(H-1, Math.max(0, Math.round(ny)+dy)), o = (y*W + x)*4;
+    c[0] += px[o]; c[1] += px[o+1]; c[2] += px[o+2];
+  }
+  return c.map(v=>Math.round(v/9));
+}
+function lpMove(cx, cy, touch){
+  if (LB.phase!=="shown") return;
+  const R = LB.rect;
+  if (touch){ cx = Math.min(R.x + R.w, Math.max(R.x, cx)); cy = Math.min(R.y + R.h, Math.max(R.y, cy)); }
+  const inside = lpInside(cx, cy);
+  lbStage.style.cursor = inside ? "none" : "zoom-out";
+  if (!inside){ lpHide(); lbReadout(null); return; }
+  LP.tx = cx; LP.ty = cy; LP.touch = touch;
+  if (!LP.on){ LP.on = true; LP.x = cx; LP.y = cy; loupe.classList.add("on"); }
+  lpKick(); lpListen(cx, cy);
+}
+function lpHide(){ LP.on = false; loupe.classList.remove("on"); }
+function lpKick(){ if (!LP.raf) LP.raf = requestAnimationFrame(lpFrame); }
+function lpFrame(){
+  LP.raf = 0; if (!LP.on || !LB.item) return;
+  LP.x += (LP.tx - LP.x)*.35; LP.y += (LP.ty - LP.y)*.35; LP.z += (LP.tz - LP.z)*.25;
+  lpDraw();
+  if (Math.abs(LP.tx - LP.x) + Math.abs(LP.ty - LP.y) > .2 || Math.abs(LP.tz - LP.z) > .005) lpKick();
+}
+function lpDraw(){
+  const R = LB.rect, it = LB.item, L = innerWidth <= 700 ? 150 : 210, d = dprOf(), S = lbStage.getBoundingClientRect();
+  if (LP.L !== L || lpCv.width !== L*d){ LP.L = L; lpCv.width = lpCv.height = L*d; loupe.style.setProperty("--L", L + "px"); }
+  // 显示位置：手指操作时放在手指上方；靠边时收进来。取样点始终是指针所在处
+  const px = Math.min(S.right - L/2 - 10, Math.max(S.left + L/2 + 10, LP.x));
+  const py = Math.min(S.bottom - L/2 - 40, Math.max(S.top + L/2 + 10, LP.y - (LP.touch ? L*.85 : 0)));
+  loupe.style.transform = `translate3d(${px - L/2}px,${py - L/2}px,0)`;
+  const nx = (LP.x - R.x)/R.w*it.W, ny = (LP.y - R.y)/R.h*it.H;
+  const per = LP.z*R.w/it.W, span = L/per, x0 = nx - span/2, y0 = ny - span/2;   // per：原图一个像素放大后占几个点
+  lpG.fillStyle = "#FFFBF7"; lpG.fillRect(0, 0, lpCv.width, lpCv.height);
+  lpG.imageSmoothingEnabled = per < 2.5; lpG.imageSmoothingQuality = "high";
+  lpG.drawImage(it.img, x0, y0, span, span, 0, 0, lpCv.width, lpCv.height);   // 放大镜里永远是原片
+  if (per >= 4){
+    const s = per*d; lpG.strokeStyle = "rgba(255,251,247,.14)"; lpG.lineWidth = 1; lpG.beginPath();
+    for (let g = Math.ceil(x0); g < x0 + span; g++){ const X = Math.round((g - x0)*s) + .5; lpG.moveTo(X, 0); lpG.lineTo(X, lpCv.height); }
+    for (let g = Math.ceil(y0); g < y0 + span; g++){ const Y = Math.round((g - y0)*s) + .5; lpG.moveTo(0, Y); lpG.lineTo(lpCv.width, Y); }
+    lpG.stroke();
+  }
+  $("#lpZ").textContent = "×" + Math.round(LP.tz*10)/10 + (per >= 2.5 ? " · PX" : "");
+  lbReadout(lpSample(nx, ny), nx, ny);
+}
+function lbReadout(rgb, nx, ny){
+  const el = $("#lbRead");
+  if (!rgb){
+    LP.hex = ""; el.classList.add("empty"); el.style.background = el.style.color = "";
+    $("#lbHex").textContent = innerWidth <= 700 ? "按住照片拖动看细节" : "把鼠标移到照片上";
+    $("#lbRgb").textContent = $("#lbXY").textContent = ""; return;
+  }
+  $("#lbXY").textContent = `X ${nx|0} · Y ${ny|0}`;
+  const h = hexOf(rgb); if (h===LP.hex) return; LP.hex = h;
+  el.classList.remove("empty"); el.style.background = h; el.style.color = lumOf(...rgb) > .6 ? "#121212" : "#FFFBF7";
+  $("#lbHex").textContent = $("#lpHex").textContent = h; $("#lbRgb").textContent = `R${rgb[0]} G${rgb[1]} B${rgb[2]}`;
+  $("#lpSw").style.background = h;
+}
+// 听照片：指针下的亮度换成都节音阶里的一个音，越亮越高，颜色越艳越响；只在换到新音时响
+function lpListen(cx, cy){
+  if (!SND.on) return;
+  const now = performance.now(); if (now - LP.at < 110) return;
+  const R = LB.rect, it = LB.item, c = lpSample((cx - R.x)/R.w*it.W, (cy - R.y)/R.h*it.H);
+  const deg = Math.round(lumOf(...c)*9); if (deg===LP.deg) return;
+  LP.deg = deg; LP.at = now;
+  lbSnd("look", deg, .45 + (Math.max(...c) - Math.min(...c))/255*.55);
+}
+
+lbStage.addEventListener("pointermove", e=>{ if (e.pointerType==="mouse" || e.buttons) lpMove(e.clientX, e.clientY, e.pointerType!=="mouse"); });
+lbStage.addEventListener("pointerdown", e=>{
+  if (LB.phase!=="shown") return;
+  if (!lpInside(e.clientX, e.clientY)) return lbRequestClose();          // 点照片外的空白处关闭
+  if (e.pointerType!=="mouse"){ try { lbStage.setPointerCapture(e.pointerId); } catch(err){} lpMove(e.clientX, e.clientY, true); }
+});
+lbStage.addEventListener("pointerup", e=>{ if (e.pointerType!=="mouse") lpHide(); });
+lbStage.addEventListener("pointerleave", e=>{ if (e.pointerType==="mouse"){ lpHide(); lbReadout(null); } });
+lbStage.addEventListener("wheel", e=>{
+  e.preventDefault(); if (LB.phase!=="shown") return;
+  const zMax = Math.max(10, 8*LB.item.W/LB.rect.w);              // 最大倍数：总能放到原图一个像素占 8 个点
+  LP.tz = Math.max(1.5, Math.min(zMax, LP.tz*(e.deltaY < 0 ? 1.15 : 1/1.15)));
+  lpMove(e.clientX, e.clientY, false);
+}, { passive:false });
+$("#lbClose").addEventListener("click", lbRequestClose);
+$("#lbPrev").addEventListener("click", ()=>lbSwitch(-1));
+$("#lbNext").addEventListener("click", ()=>lbSwitch(1));
+$("#lbPal").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if (!b) return;
+  navigator.clipboard?.writeText(b.dataset.hex).then(()=>{ const t = b.querySelector("span"), o = t.textContent; t.textContent = "已复制"; setTimeout(()=>t.textContent = o, 900); }).catch(()=>{});
+});
+addEventListener("keydown", e=>{
+  if (!LB.open) return;
+  if (e.key==="Escape") lbRequestClose();
+  else if (e.key==="ArrowRight" || e.key==="ArrowDown") lbSwitch(1);
+  else if (e.key==="ArrowLeft" || e.key==="ArrowUp") lbSwitch(-1);
+  else if (/^[1-4]$/.test(e.key)) lbRestyle(STYLES[+e.key-1].id);
+  else return;
+  e.preventDefault();
+});
 
 /* ---------------- 声音：全部由浏览器现场合成，不用任何音乐文件 ---------------- */
 const SND = { on:false, ac:null, amb:null, cur:-2, step:0, last:0, tone:-1, ks:new Map() };
@@ -763,6 +1249,90 @@ function loopNoise(dest, buf, type, freq, q, gain){
 }
 function lfo(param, rate, depth){ const ac = A(), o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = rate; g.gain.value = depth; o.connect(g).connect(param); o.start(); return o; }
 function drone(dest, f, type, gain){ const ac = A(), o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.value = f; g.gain.value = gain; o.connect(g).connect(dest); o.start(); return o; }
+// 大图用到的几种新音色：风 / 浪、霓虹起音、黑胶底噪
+Object.assign(V, {
+  wind(t, dest, v=.08, dur=1, f0=300, f1=2400, q=1.2, type="bandpass"){
+    const ac = A(), s = ac.createBufferSource(), fl = ac.createBiquadFilter(), g = ac.createGain();
+    s.buffer = SND.noise; s.loop = true; fl.type = type; fl.Q.value = q;
+    fl.frequency.setValueAtTime(f0, t); fl.frequency.exponentialRampToValueAtTime(f1, t+dur*.55); fl.frequency.exponentialRampToValueAtTime(f0, t+dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t+dur*.45); g.gain.linearRampToValueAtTime(0, t+dur);
+    s.connect(fl).connect(g).connect(dest); s.start(t, Math.random()); s.stop(t+dur+.05);
+  },
+  riser(t, dest, v=.04, dur=.8, f0=200, f1=4000, root=146.8){   // 三个锯齿波叠成和弦，共振低通从 f0 扫到 f1
+    const ac = A(), fl = ac.createBiquadFilter(), g = ac.createGain();
+    fl.type = "lowpass"; fl.Q.value = 9; fl.frequency.setValueAtTime(f0, t); fl.frequency.exponentialRampToValueAtTime(f1, t+dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t+dur*.85); g.gain.linearRampToValueAtTime(0, t+dur+.06);
+    fl.connect(g).connect(dest);
+    [[1,0],[1,9],[1.5,-6],[.5,4]].forEach(([k,dt])=>{ const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = root*k; o.detune.value = dt; o.connect(fl); o.start(t); o.stop(t+dur+.1); });
+  },
+  vinyl(t, dest, v=.6, dur=1){
+    const ac = A(), s = ac.createBufferSource(), g = ac.createGain();
+    s.buffer = SND.crackle; s.loop = true; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t+.08); g.gain.linearRampToValueAtTime(0, t+dur);
+    s.connect(g).connect(dest); s.start(t, Math.random()*2); s.stop(t+dur+.05);
+  },
+});
+// 大图里每章一套声音：open 聚拢 / step 显影每一级 / done 成像 / look 放大镜（音级 d、力度 v）/ swap 切换 / close 关闭
+const arp = (t, degs, gap, fn) => degs.forEach((d,k)=>fn(d, t + k*gap));
+const LB_SND = [
+  { // 高塔：钟
+    open:t=>{ const fx = SND.fx; V.wind(t, fx, .07, 1.2, 110, 520, .8, "lowpass"); V.bell(hz(0,-1,57), t+.08, fx, .05); },
+    step:(t,j)=>V.bell(hz(j,0,57), t, SND.fx, .03),
+    done:t=>{ V.bell(hz(0,-1,57), t, SND.fx, .1); V.bell(hz(4,1,57), t+.03, SND.fx, .035); },
+    look:(t,d,v)=>V.bell(hz(d,1,57), t, SND.fx, .018*v),
+    swap:t=>V.wind(t, SND.fx, .05, .7, 140, 800, .8, "lowpass"),
+    close:t=>arp(t, [4,2,0], .13, (d,s)=>V.bell(hz(d,0,57), s, SND.fx, .03)),
+  },
+  { // 霓虹：合成器
+    open:t=>V.riser(t, SND.fx, .04, .95, 160, 5200, hz(0,-2)),
+    step:(t,j)=>V.synth(hz(j,1), t, SND.fx, .032, .1),
+    done:t=>{ [0,2,4].forEach(d=>V.synth(hz(d), t, SND.fx, .04, .7)); V.synth(hz(0,-2), t, SND.fx, .06, .9); },
+    look:(t,d,v)=>V.synth(hz(d,1), t, SND.fx, .02*v, .07),
+    swap:t=>V.riser(t, SND.fx, .028, .42, 3600, 260, hz(2,-2)),
+    close:t=>arp(t, [7,4,2,0], .07, (d,s)=>V.synth(hz(d,1), s, SND.fx, .03, .12)),
+  },
+  { // 朱红：拨弦（拨弦的波形振幅大，音量单独压低一些）
+    open:t=>arp(t, [0,1,2,3,4,5,6], .035, (d,s)=>V.pluck(hz(d), s, SND.fx, .08)),
+    step:(t,j)=>V.pluck(hz(j), t, SND.fx, .1),
+    done:t=>{ [0,2,4,5].forEach(d=>V.pluck(hz(d,-1), t, SND.fx, .1)); V.pluck(hz(6), t+.12, SND.fx, .08); },
+    look:(t,d,v)=>V.pluck(hz(d), t, SND.fx, .06*v),
+    swap:t=>arp(t, [5,3,1], .03, (d,s)=>V.pluck(hz(d), s, SND.fx, .07)),
+    close:t=>arp(t, [4,2,0,-2], .11, (d,s)=>V.pluck(hz(d), s, SND.fx, .09)),
+  },
+  { // 绿荫：木琴 + 风 + 鸟
+    open:t=>{ V.wind(t, SND.fx, .06, 1.3, 380, 1400, .7); V.chirp(t+.35, SND.fx); V.chirp(t+.5, SND.fx); },
+    step:(t,j)=>V.wood(hz(j,1), t, SND.fx, .07),
+    done:t=>{ arp(t, [0,2,4], .06, (d,s)=>V.wood(hz(d,1), s, SND.fx, .08)); V.chirp(t+.25, SND.fx); V.chirp(t+.38, SND.fx); V.chirp(t+.52, SND.fx); },
+    look:(t,d,v)=>V.wood(hz(d,1), t, SND.fx, .045*v),
+    swap:t=>V.wind(t, SND.fx, .04, .6, 480, 1600, .7),
+    close:t=>{ V.chirp(t, SND.fx); arp(t+.1, [4,2,0], .1, (d,s)=>V.wood(hz(d,1), s, SND.fx, .06)); },
+  },
+  { // 漫游：浪 + 高音拨弦
+    open:t=>V.wind(t, SND.fx, .09, 1.6, 240, 900, .5, "lowpass"),
+    step:(t,j)=>V.pluck(hz(j,1), t, SND.fx, .12),
+    done:t=>arp(t, [0,2,4,7,9], .075, (d,s)=>V.pluck(hz(d,1), s, SND.fx, .13)),
+    look:(t,d,v)=>V.pluck(hz(d,1), t, SND.fx, .075*v),
+    swap:t=>V.wind(t, SND.fx, .06, .8, 260, 800, .5, "lowpass"),
+    close:t=>arp(t, [9,7,4,2,0], .07, (d,s)=>V.pluck(hz(d,1), s, SND.fx, .1)),
+  },
+  { // 小事：lo-fi 电钢 + 黑胶
+    open:t=>{ V.vinyl(t, SND.fx, .6, 1.3); V.keys(hz(0,-1,57), t+.1, SND.fx, .05, 1.5); },
+    step:(t,j)=>V.keys(hz(j,0,57), t, SND.fx, .04, .5),
+    done:t=>{ arp(t, [0,2,4], .035, (d,s)=>V.keys(hz(d,0,57), s, SND.fx, .05, 2.4)); V.keys(hz(0,-1,57), t, SND.fx, .05, 2.4); },
+    look:(t,d,v)=>V.keys(hz(d,0,57), t, SND.fx, .03*v, .5),
+    swap:t=>V.vinyl(t, SND.fx, .5, .5),
+    close:t=>arp(t, [3,1,-2], .09, (d,s)=>V.keys(hz(d,0,57), s, SND.fx, .045, 1.2)),
+  },
+];
+function lbSnd(name, ...a){ if (!SND.on || !SND.ac) return; const f = LB_SND[LB.ci]?.[name]; if (f) f(A().currentTime + .01, ...a); }
+// 大图打开时，章节环境声压低、变闷，让位给大图的声音；关掉后恢复
+function sndDuck(on){
+  if (LB.ducked===on) return; LB.ducked = on;
+  if (!SND.on || !SND.ac) return;
+  const t = A().currentTime;
+  if (SND.amb) SND.amb.g.gain.setTargetAtTime(on ? .3 : 1, t, .35);
+  if (on) SND.lp.frequency.setTargetAtTime(750, t, .35); else SND.tone = -1;
+}
+
 
 // 每章的悬停音色：高塔钟、霓虹合成器、朱红拨弦、绿荫木琴、漫游高音拨弦、小事电钢
 const VOICE = [
@@ -829,8 +1399,15 @@ function sndChime(i){ if (SND.on) V.wood(hz(i*2 + 2, 1), A().currentTime, SND.fx
 function sndTone(k){ if (!SND.on || Math.abs(k - SND.tone) < .01) return; SND.tone = k; SND.lp.frequency.setTargetAtTime(900 + k*4200, A().currentTime, .15); }
 
 const sndBtn = $("#snd");
-sndBtn.addEventListener("click", ()=>{
-  SND.on = !SND.on; sndBtn.setAttribute("aria-pressed", String(SND.on));
+sndBtn.addEventListener("click", ()=>setSound(!SND.on));
+// 浏览器只允许在用户点击/按键后出声：第一次交互时自动打开声音（滚轮不算，浏览器不认）
+const sndFirst = e=>{
+  ["pointerdown","keydown"].forEach(n=>removeEventListener(n, sndFirst, true));
+  if (!SND.on && !(e.target instanceof Node && sndBtn.contains(e.target))) setSound(true);   // 第一下就点 Sound 时交给按钮自己处理
+};
+["pointerdown","keydown"].forEach(n=>addEventListener(n, sndFirst, true));
+function setSound(on){
+  SND.on = on; sndBtn.setAttribute("aria-pressed", String(SND.on));
   if (SND.on){
     if (!SND.ac) sndInit();
     const ac = A(); ac.resume();
@@ -840,17 +1417,21 @@ sndBtn.addEventListener("click", ()=>{
     const ac = A(); SND.out.gain.setTargetAtTime(0, ac.currentTime, .12);
     setTimeout(()=>{ if (SND.on) return; stopAmb(SND.amb, .01); SND.amb = null; SND.cur = -2; ac.suspend(); }, 600);
   }
-});
+}
 
 /* ---------------- 路由与转场 ---------------- */
 const route = { view:"home", key:"" };
 const curtain = $("#curtain");
 function parse(){
-  const m = location.hash.match(/^#\/ch\/(\d+)(?:\/(\d+))?/);
-  if (m){ const ci = Math.min(CHAPTERS.length, Math.max(1, +m[1])) - 1; return { view:"chapter", ci, focus:+(m[2]||0), key:`ch${ci}` }; }
-  return { view:"home", key:"home" };
+  const m = location.hash.match(/^#\/ch\/(\d+)(?:\/(\d+))?(\/view)?/);
+  if (m){
+    const ci = Math.min(CHAPTERS.length, Math.max(1, +m[1])) - 1, focus = +(m[2]||0), n = CHAPTERS[ci].photos.length;
+    return { view:"chapter", ci, focus, photo: m[3] && focus ? Math.min(n, focus) - 1 : -1, key:`ch${ci}` };   // /view：打开这一张的大图
+  }
+  return { view:"home", key:"home", photo:-1 };
 }
 function show(r){
+  if (LB.open) lbReset();
   $("#home").hidden = r.view!=="home";
   $("#chapter").hidden = r.view!=="chapter";
   document.querySelectorAll("[data-nav]").forEach(a=>a.setAttribute("aria-current", String(a.dataset.nav===(r.view==="home"?"home":"ch"))));
@@ -863,7 +1444,8 @@ let busy = false;
 async function go(){
   const r = parse();
   if (r.key===route.key && r.view==="home") return;
-  if (reduce || busy){ show(r); return; }
+  if (r.key===route.key && !busy){ lbSync(r); return; }       // 同一章里只是开关大图，不走幕布转场
+  if (reduce || busy){ show(r); if (r.photo >= 0) lbOpen(r.ci, r.photo, false); return; }
   busy = true; sndSwoosh();
   curtain.querySelector("b").textContent = r.view==="chapter" ? CHAPTERS[r.ci].en : "Japan";
   const opt = { duration:520, easing:"cubic-bezier(.7,0,.2,1)", fill:"forwards" };
@@ -873,6 +1455,7 @@ async function go(){
   await curtain.animate([{transform:"translateY(0)"},{transform:"translateY(-100%)"}], opt).finished;
   curtain.getAnimations().forEach(a=>a.cancel());
   busy = false;
+  if (r.photo >= 0) lbOpen(r.ci, r.photo, false);           // 从别处直接跳到某张大图：幕布拉开后再显影
 }
 addEventListener("hashchange", go);
 
@@ -893,14 +1476,16 @@ function loop(t){
 }
 
 let rt;
-addEventListener("resize", ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ layoutRing(); sampleDots(false); if (route.view==="chapter") measureChapter(); }, 120); });
+addEventListener("resize", ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ layoutRing(); sampleDots(false); if (route.view==="chapter") measureChapter(); if (LB.open) lbResize(); }, 120); });
+function lbResize(){ lbLayout(); lpHide(); if (LB.phase==="shown") lbDrawDev(1); }
 
 (async function init(){
   layoutRing();
   try { await document.fonts.load('900 100px Archivo'); } catch(e){}
   sampleDots(true);
-  show(parse());
+  const r = parse(); show(r);
   requestAnimationFrame(loop);
+  if (r.photo >= 0) requestAnimationFrame(()=>requestAnimationFrame(()=>lbOpen(r.ci, r.photo, false)));
 })();
 </script>
 </body>
