@@ -104,7 +104,16 @@ a{color:inherit;text-decoration:none}
   color:var(--accent);font-family:var(--cjk);font-size:12px;pointer-events:auto}
 .touch-enter[hidden]{display:none}
 .touch-enter:hover{background:var(--accent);color:var(--on-accent)}
+.touch-enter:disabled{color:var(--muted);border-color:var(--line);background:transparent;cursor:default}
 .touch-enter:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.mobile-home .center{gap:12px;padding:0 4px}
+.mobile-home .tile{width:calc(var(--c) - 6px);height:calc(var(--c) - 6px);text-align:left}
+.mobile-home .sub{font-size:13px;line-height:1.5;text-align:center;white-space:normal}
+.mobile-home .places{display:none}
+.mobile-home .hint{font-family:var(--cjk);font-size:11px;line-height:1.5;letter-spacing:.02em;text-align:center;white-space:normal}
+.mobile-home .hint i{display:none}
+.mobile-home .touch-enter{min-height:48px;min-width:180px;justify-content:center;font-size:13px}
+.mobile-home .center canvas{pointer-events:none}
 @keyframes sweep{60%,100%{transform:translateX(100%)}}
 
 /* ---------- chapter view ---------- */
@@ -329,8 +338,8 @@ a{color:inherit;text-decoration:none}
       <canvas id="dots"></canvas>
       <p class="sub x"></p>
       <p class="places x"></p>
-      <p class="hint x"><i></i><span id="touchGuide">Scroll to travel</span><i></i></p>
-      <a class="touch-enter" id="touchEnter" hidden href="#/"></a>
+      <p class="hint x"><i></i><span id="touchGuide" role="status">Scroll to travel</span><i></i></p>
+      <button class="touch-enter" id="touchEnter" type="button" hidden disabled></button>
     </div>
   </div>
 </section>
@@ -558,90 +567,133 @@ const TILES = ringTiles();
 
 /* ---------------- 首页：照片环 ---------------- */
 const frame = $("#frame"), center = $("#center");
+const mobileMedia = matchMedia("(max-width: 700px), (pointer: coarse)");
 const ring = { u:0, tu:0, strips:[], c:120, cols:7, rows:5, lastInput:0, hover:false,
-  input:matchMedia("(hover: none), (pointer: coarse)").matches ? "touch" : "mouse", preview:null, suppressUntil:0 };
+  mobile:mobileMedia.matches, vertical:false,
+  input:mobileMedia.matches ? "touch" : "mouse", preview:null, suppressUntil:0 };
 const touchEnter = $("#touchEnter"), touchGuide = $("#touchGuide");
 function updateTouchGuide(){
-  touchGuide.textContent = ring.input==="mouse" ? "Scroll to travel" : ring.preview ? "再点照片，或进入章节" : "轻点预览 · 滑动浏览";
+  const preview = ring.mobile || ring.input!=="mouse";
+  touchGuide.textContent = !preview ? "Scroll to travel" : P.morph ? "正在变换粒子…" : ring.preview ? "点照片继续预览，点按钮进入章节" : "轻点照片看粒子 · 滑动选择照片";
+}
+function updatePreviewAction(){
+  touchEnter.hidden = !ring.preview;
+  touchEnter.disabled = !ring.preview || !!P.morph;
+  if (ring.preview) touchEnter.textContent = P.morph ? "正在变换…" : `进入${CHAPTERS[ring.preview.ci].zh}章节 →`;
+  updateTouchGuide();
 }
 function clearTouchPreview(reset=true){
   ring.preview = null;
-  frame.querySelectorAll(".tile.preview").forEach(el=>el.classList.remove("preview"));
-  touchEnter.hidden = true;
-  updateTouchGuide();
+  P.morph = null;
+  frame.querySelectorAll(".tile.preview").forEach(el=>{
+    el.classList.remove("preview");
+    if (el.tagName==="BUTTON") el.setAttribute("aria-pressed", "false");
+  });
+  if (P.resamplePending){ P.resamplePending = false; sampleDots(false); }
+  updatePreviewAction();
   if (reset && P.shapes.length){ clearTimeout(P.timer); setShape(0, null, false); setCaption(-1); }
 }
 function previewTile(t){
+  if (ring.preview?.p.src===t.p.src && P.morph) return;
   clearTimeout(P.timer);
   if (!P.shapes.length) sampleDots(false);
   P.mx = P.my = -1e4;
   ring.preview = { ...t, at:performance.now() }; ring.tu = ring.u;
-  frame.querySelectorAll("a.tile").forEach(el=>el.classList.toggle("preview", el.dataset.src===t.p.src));
-  setCaption(t.ci); setShape(t.ci+1, t.p.src);
-  touchEnter.href = `#/ch/${t.ci+1}/${t.pi+1}`;
-  touchEnter.textContent = `进入${CHAPTERS[t.ci].zh}章节 →`; touchEnter.hidden = false;
-  updateTouchGuide(); sndHover(t.ci, t.pi);
+  frame.querySelectorAll(".tile[data-src]").forEach(el=>{
+    const selected = el.dataset.src===t.p.src;
+    el.classList.toggle("preview", selected);
+    if (el.tagName==="BUTTON") el.setAttribute("aria-pressed", String(selected));
+  });
+  setCaption(t.ci); setShape(t.ci+1, t.p.src, true, true);
+  updatePreviewAction(); sndHover(t.ci, t.pi);
 }
+touchEnter.addEventListener("click", ()=>{
+  if (!ring.preview || P.morph || busy) return;
+  location.hash = `#/ch/${ring.preview.ci+1}/${ring.preview.pi+1}`;
+});
 
 function tileEl(t){
   if (t.text){
     const d = document.createElement("div");
     d.className = "tile text x " + t.text.cls; d.innerHTML = t.text.html; return d;
   }
-  const ch = CHAPTERS[t.ci], b = document.createElement("a");
-  b.className = "tile"; b.href = `#/ch/${t.ci+1}/${t.pi+1}`;
+  const ch = CHAPTERS[t.ci], b = document.createElement(ring.mobile ? "button" : "a");
+  b.className = "tile";
+  if (ring.mobile){
+    b.type = "button"; b.setAttribute("aria-pressed", String(ring.preview?.p.src===t.p.src));
+  } else b.href = `#/ch/${t.ci+1}/${t.pi+1}`;
   b.dataset.src = t.p.src;
   if (ring.preview?.p.src===t.p.src) b.classList.add("preview");
-  b.setAttribute("aria-label", `${ch.zh}：${t.p.cap}`);
+  b.setAttribute("aria-label", `${ring.mobile ? "预览" : ""}${ch.zh}：${t.p.cap}`);
   const label = `<em>CH.${pad2(t.ci+1)} — ${pad2(t.pi+1)}</em><b>${ch.en}<span>${ch.zh}</span></b>`;
   b.innerHTML = `<img src="photos/sq/${t.p.src}.jpg" alt="" decoding="async"><span class="ov x">${label}</span>`;
   b.addEventListener("pointerenter", e=>{
-    if (e.pointerType!=="mouse") return;
+    if (ring.mobile || e.pointerType!=="mouse") return;
     if (ring.preview) clearTouchPreview(false);
     ring.input = "mouse"; updateTouchGuide();
     ring.hover = true; hoverChapter(t.ci, t.p.src); sndHover(t.ci, t.pi);
   });
   b.addEventListener("pointerleave", e=>{
-    if (e.pointerType!=="mouse") return;
+    if (ring.mobile || e.pointerType!=="mouse") return;
     ring.hover = false; if (route.view==="home") hoverChapter(-1);
   });
   b.addEventListener("click", e=>{
     if (performance.now() < ring.suppressUntil){ e.preventDefault(); return; }
-    if (e.detail===0 && !e.pointerType) return; // 键盘和辅助功能保持一次激活即可进入。
-    const touch = e.pointerType ? e.pointerType!=="mouse" : ring.input!=="mouse";
+    if (!ring.mobile && e.detail===0 && !e.pointerType) return;
+    const touch = ring.mobile || (e.pointerType ? e.pointerType!=="mouse" : ring.input!=="mouse");
     if (!touch) return;
     ring.input = "touch"; ring.hover = false;
-    // 第一次轻点留在首页预览；再点同一张，或点中间的进入按钮。
-    if (ring.preview?.p.src===t.p.src) return;
+    // 手机照片是预览按钮，没有章节 href；重复点击、模拟鼠标点击也不会跳页。
     e.preventDefault(); previewTile(t);
   });
   b.querySelector("img").addEventListener("load", ()=>{
-    if (ring.preview?.p.src===t.p.src && P.shapes.length) setShape(t.ci+1, t.p.src, false);
+    if (ring.preview?.p.src!==t.p.src || !P.shapes.length) return;
+    const tint = photoTint(t.p.src);
+    if (tint){ P.tinted = true; P.dots.forEach(d=>d.t=tintAt(tint,d.hx,d.hy)); }
   });
   return b;
 }
 
 function layoutRing(){
   const W = innerWidth, H = innerHeight - parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--hdr"));
-  const landscape = W > 700 && W/H > .95;
-  // 横屏固定 4 行，列数按屏幕比例取（16:9 约 7 列，更宽的屏 8–9 列），让照片环尽量铺满
-  const padX = landscape ? W*.04 : 16, padY = 24;
-  const rows = landscape ? 4 : 7;
-  const cols = landscape ? Math.max(6, Math.min(9, Math.round((W-padX*2)/((H-padY*2)/rows)))) : 5;
-  const c = Math.floor(Math.min((W-padX*2)/cols, (H-padY*2)/rows));
-  Object.assign(ring,{c,cols,rows});
-  const fw = c*cols, fh = c*rows;
-  Object.assign(frame.style,{ width:fw+"px", height:fh+"px", left:((W-fw)/2)+"px", top:((H-fh)/2)+"px" });
-  frame.style.setProperty("--c", c+"px");
-  Object.assign(center.style,{ left:c+"px", top:c+"px", width:(fw-2*c)+"px", height:(fh-2*c)+"px" });
+  const mobile = mobileMedia.matches;
+  if (ring.mobile!==mobile && ring.preview) clearTouchPreview();
+  ring.mobile = mobile;
+  $("#home").classList.toggle("mobile-home", mobile);
+  let defs, c;
+  if (mobile){
+    // 手机把粒子放到全宽舞台，照片独立成带；横屏时照片带移到右侧。
+    ring.vertical = W/H > 1.35;
+    c = Math.round(Math.max(80,Math.min(112,ring.vertical ? H*.26 : W*.24)));
+    Object.assign(ring,{c,cols:Math.ceil(W/c),rows:Math.ceil(H/c)});
+    Object.assign(frame.style,{width:W+"px",height:H+"px",left:"0px",top:"0px"});
+    frame.style.setProperty("--c",c+"px");
+    Object.assign(center.style,{left:"16px",top:"0px",width:(ring.vertical ? W-c-48 : W-32)+"px",height:(ring.vertical ? H : H-c-48)+"px"});
+    defs = [ring.vertical
+      ? {name:"rail",x:W-c-16,y:16,w:c,h:H-32,axis:"y",dir:-1,vis:Math.ceil((H-32)/c)}
+      : {name:"rail",x:16,y:H-c-20,w:W-32,h:c,axis:"x",dir:-1,vis:Math.ceil((W-32)/c)}];
+  } else {
+    ring.vertical = false;
+    const landscape = W > 700 && W/H > .95;
+    // 横屏固定 4 行，列数按屏幕比例取（16:9 约 7 列，更宽的屏 8–9 列），让照片环尽量铺满
+    const padX = landscape ? W*.04 : 16, padY = 24;
+    const rows = landscape ? 4 : 7;
+    const cols = landscape ? Math.max(6, Math.min(9, Math.round((W-padX*2)/((H-padY*2)/rows)))) : 5;
+    c = Math.floor(Math.min((W-padX*2)/cols, (H-padY*2)/rows));
+    Object.assign(ring,{c,cols,rows});
+    const fw = c*cols, fh = c*rows;
+    Object.assign(frame.style,{ width:fw+"px", height:fh+"px", left:((W-fw)/2)+"px", top:((H-fh)/2)+"px" });
+    frame.style.setProperty("--c", c+"px");
+    Object.assign(center.style,{ left:c+"px", top:c+"px", width:(fw-2*c)+"px", height:(fh-2*c)+"px" });
 
-  // 四条边：top 往左、left 往下、bottom 往右、right 往上 → 整体逆时针流动
-  const defs = [
-    { name:"top",    x:0,        y:0,        w:fw, h:c,          axis:"x", dir:-1, vis:cols },
-    { name:"right",  x:fw-c,     y:c,        w:c,  h:fh-2*c,     axis:"y", dir:-1, vis:rows-2 },
-    { name:"bottom", x:0,        y:fh-c,     w:fw, h:c,          axis:"x", dir: 1, vis:cols },
-    { name:"left",   x:0,        y:c,        w:c,  h:fh-2*c,     axis:"y", dir: 1, vis:rows-2 },
-  ];
+    // 四条边：top 往左、left 往下、bottom 往右、right 往上 → 整体逆时针流动
+    defs = [
+      { name:"top",    x:0,        y:0,        w:fw, h:c,          axis:"x", dir:-1, vis:cols },
+      { name:"right",  x:fw-c,     y:c,        w:c,  h:fh-2*c,     axis:"y", dir:-1, vis:rows-2 },
+      { name:"bottom", x:0,        y:fh-c,     w:fw, h:c,          axis:"x", dir: 1, vis:cols },
+      { name:"left",   x:0,        y:c,        w:c,  h:fh-2*c,     axis:"y", dir: 1, vis:rows-2 },
+    ];
+  }
   // 按可见长度分配格子，每条边至少比可见多 1 格才能无缝循环
   const need = defs.map(d=>d.vis+1), total = TILES.length, spare = total - need.reduce((a,b)=>a+b,0);
   const weight = defs.map(d=>d.vis), wsum = weight.reduce((a,b)=>a+b,0);
@@ -652,6 +704,7 @@ function layoutRing(){
   ring.strips = []; let k = 0;
   defs.forEach((d,i)=>{
     const el = document.createElement("div"); el.className = "strip";
+    el.dataset.strip = d.name;
     Object.assign(el.style,{ left:d.x+"px", top:d.y+"px", width:d.w+"px", height:d.h+"px" });
     const tiles = TILES.slice(k, k+counts[i]).map(t=>{ const e = tileEl(t); el.appendChild(e); return e; });
     k += counts[i];
@@ -659,6 +712,7 @@ function layoutRing(){
     ring.strips.push({ ...d, tiles, len:tiles.length*c });
   });
   renderRing();
+  updateTouchGuide();
 }
 
 function renderRing(){
@@ -673,30 +727,31 @@ function renderRing(){
 }
 
 /* 输入：滚轮 / 触摸拖动 / 键盘 → 只改目标位置，每帧插值追上 */
-function nudge(d){ if (ring.preview) clearTouchPreview(); ring.tu += d; ring.lastInput = performance.now(); }
+function nudge(d){ if (ring.preview && !ring.mobile) clearTouchPreview(); ring.tu += d; ring.lastInput = performance.now(); }
 $("#home").addEventListener("wheel", e=>{ e.preventDefault(); nudge((e.deltaY+e.deltaX)/240); }, { passive:false });
 let homeTouch = null;
 $("#home").addEventListener("touchstart", e=>{
   ring.input = "touch"; ring.hover = false; updateTouchGuide();
+  if (ring.mobile && !(e.target instanceof Element && e.target.closest(".strip"))){ homeTouch = null; return; }
   if (e.touches.length!==1){ homeTouch = null; ring.suppressUntil = performance.now()+600; return; }
   const t = e.touches[0];
-  homeTouch = { x:t.clientX, y:t.clientY, last:t.clientX+t.clientY, moved:false };
+  homeTouch = { x:t.clientX, y:t.clientY, last:ring.mobile ? (ring.vertical ? t.clientY : t.clientX) : t.clientX+t.clientY, moved:false };
 }, { passive:true });
 $("#home").addEventListener("touchmove", e=>{
   if (!homeTouch || e.touches.length!==1) return;
-  const t = e.touches[0], v = t.clientX+t.clientY;
+  const t = e.touches[0], v = ring.mobile ? (ring.vertical ? t.clientY : t.clientX) : t.clientX+t.clientY;
   if (Math.hypot(t.clientX-homeTouch.x,t.clientY-homeTouch.y)>8) homeTouch.moved = true;
-  if (homeTouch.moved){ nudge(-(v-homeTouch.last)/ring.c*1.2); ring.suppressUntil = performance.now()+600; }
+  if (homeTouch.moved){ nudge(-(v-homeTouch.last)/ring.c*1.2); ring.suppressUntil = performance.now()+180; }
   homeTouch.last = v;
 }, { passive:true });
 const endHomeTouch = ()=>{
-  if (homeTouch?.moved) ring.suppressUntil = performance.now()+600;
+  if (homeTouch?.moved) ring.suppressUntil = performance.now()+180;
   homeTouch = null;
 };
 $("#home").addEventListener("touchend", endHomeTouch);
 $("#home").addEventListener("touchcancel", endHomeTouch);
 $("#home").addEventListener("click", e=>{
-  if (ring.preview && e.target instanceof Element && !e.target.closest("a,button")) clearTouchPreview();
+  if (!ring.mobile && ring.preview && e.target instanceof Element && !e.target.closest("a,button")) clearTouchPreview();
 });
 addEventListener("keydown", e=>{
   if (route.view!=="home") return;
@@ -706,7 +761,7 @@ addEventListener("keydown", e=>{
 
 /* ---------------- 首页：点阵粒子字（悬停照片时重组成章节名，并染上那张照片的颜色） ---------------- */
 const cv = $("#dots"), ctx = cv.getContext("2d");
-const P = { dots:[], mx:-1e4, my:-1e4, R:THEME.motion.repel, step:6, r:2.4, w:0, h:0, size:0, shapes:[], key:0, src:null, tinted:false, timer:0, tints:new Map() };
+const P = { dots:[], mx:-1e4, my:-1e4, R:THEME.motion.repel, step:6, r:2.4, w:0, h:0, size:0, shapes:[], key:0, src:null, tinted:false, timer:0, tints:new Map(), morph:null, resamplePending:false };
 const HOME = THEME.home;
 const cssRGB = name => { const h = getComputedStyle(document.documentElement).getPropertyValue(name).trim().slice(1); return [0,2,4].map(i=>parseInt(h.slice(i, i+2), 16)); };
 const ACCENT = cssRGB("--accent"), PAPER = cssRGB("--bg"), INK = cssRGB("--ink");
@@ -721,7 +776,7 @@ function wordPoints(word){
   const lines = word.length > 9 && word.includes(" ") ? word.split(" ") : [word], L = lines.length;
   setFont(g, 100);
   const m = Math.max(...lines.map(l=>g.measureText(l).width));
-  const size = Math.min(P.size, 100*w/m, h/(.86*L - .14));
+  const size = Math.min(P.size, 100*w*(ring.mobile ? .88 : 1)/m, h*(ring.mobile ? .78 : 1)/(.86*L - .14));
   setFont(g, size); g.textAlign = "center"; g.fillStyle = "#000";
   const top = (h - size*(.86*L - .14))/2;
   lines.forEach((l,i)=>g.fillText(l, w/2, top + size*(.72 + .86*i)));
@@ -733,35 +788,45 @@ function wordPoints(word){
 }
 
 function sampleDots(intro){
+  if (P.morph && !intro){ P.resamplePending = true; return; }
   const dpr = Math.min(devicePixelRatio||1, 2);
-  const cw = (ring.cols-2)*ring.c, chH = (ring.rows-2)*ring.c;
+  const cw = ring.mobile ? center.clientWidth-8 : (ring.cols-2)*ring.c;
+  const chH = ring.mobile ? center.clientHeight : (ring.rows-2)*ring.c;
   // 以 JAPAN 定画布：宽度撑到中间区域的 82%，高度不超过中间区域的 42%
   const g = document.createElement("canvas").getContext("2d"); setFont(g, 100);
-  const m = g.measureText(HOME.word).width, size = Math.min(100*cw*.82/m, chH*.42/.86);
-  const w = Math.round(m*size/100), h = Math.round(size*.86), step = Math.max(4, Math.round(w/108));
-  Object.assign(P,{ w, h, size, step, r:step*.4, R:Math.max(48, step*11) });
+  const m = g.measureText(HOME.word).width;
+  const h = ring.mobile ? Math.round(Math.min(200,Math.max(96,chH*.38))) : 0;
+  const size = Math.min(100*cw*(ring.mobile ? .88 : .82)/m, (ring.mobile ? h*.72 : chH*.42)/.86);
+  const w = ring.mobile ? Math.round(cw) : Math.round(m*size/100);
+  const height = ring.mobile ? h : Math.round(size*.86), step = Math.max(ring.mobile ? 3 : 4, Math.round(w/108));
+  Object.assign(P,{ w, h:height, size, step, r:step*.4, R:Math.max(48, step*11) });
   P.tints.clear();
-  cv.width = w*dpr; cv.height = h*dpr; cv.style.width = w+"px"; cv.style.height = h+"px";
+  cv.width = w*dpr; cv.height = height*dpr; cv.style.width = w+"px"; cv.style.height = height+"px";
   ctx.setTransform(dpr,0,0,dpr,0,0);
   P.shapes = [HOME.word, ...CHAPTERS.map(c=>THEME.font.upper ? c.en.toUpperCase() : c.en)].map(wordPoints);
   const N = Math.max(...P.shapes.map(s=>s.length));
   P.dots = Array.from({ length:N }, ()=>({ x:0, y:0, vx:0, vy:0, hx:0, hy:0, r:0, g:0, b:0, t:ACCENT }));
   setShape(P.key, P.src, false);
   for (const d of P.dots){
-    if (intro && !reduce){ d.x = w/2 + (Math.random()-.5)*w*1.4; d.y = h/2 + (Math.random()-.5)*h*3; }
+    if (intro && !reduce){ d.x = w/2 + (Math.random()-.5)*w*1.4; d.y = height/2 + (Math.random()-.5)*height*3; }
     else { d.x = d.hx; d.y = d.hy; }
     [d.r, d.g, d.b] = d.t;
   }
+  updatePreviewAction();
 }
 
 // k：0 = JAPAN，1–6 = 第几章；src：拿来取色的照片。点数少的词，多出来的点叠在已有点上
-function setShape(k, src, burst=true){
+function setShape(k, src, burst=true, preview=false){
   const pts = P.shapes[k], n = pts.length, N = P.dots.length, tint = src ? photoTint(src) : null;
-  if (k===P.key) burst = false;
+  const morph = ring.mobile && preview && !reduce;
+  P.morph = morph ? { start:performance.now(), duration:950 } : null;
+  if (k===P.key && !morph) burst = false;
   P.dots.forEach((d,i)=>{
+    if (morph){ d.sx=d.x; d.sy=d.y; d.sr=d.r; d.sg=d.g; d.sb=d.b; d.vx=d.vy=0; }
     const [x,y] = pts[Math.floor(i*n/N)];
     d.hx = x; d.hy = y; d.t = tint ? tintAt(tint, x, y) : ACCENT;
-    if (burst && !reduce){ d.vx += (Math.random()-.5)*16; d.vy += (Math.random()-.5)*16; }   // 先炸开一下再归位
+    if (!morph && burst && !reduce){ d.vx += (Math.random()-.5)*16; d.vy += (Math.random()-.5)*16; }   // 桌面保留散开，手机用完整的可见路径重组。
+    if (preview && reduce){ d.x=d.hx; d.y=d.hy; d.vx=d.vy=0; [d.r,d.g,d.b]=d.t; }
   });
   Object.assign(P, { key:k, src, tinted:!!tint });
   cv.setAttribute("aria-label", k ? CHAPTERS[k-1].en : HOME.word);
@@ -807,19 +872,34 @@ function setCaption(ci){
   if (!reduce) [subEl, lineEl].forEach(el=>el.animate([{ opacity:0, transform:"translateY(6px)" },{ opacity:1, transform:"none" }], { duration:380, easing:"cubic-bezier(.2,.7,.2,1)" }));
 }
 
-function stepDots(){
+function stepDots(now=performance.now()){
   const { mx, my, R } = P, R2 = R*R; let settled = true;
-  for (const d of P.dots){
-    const dx = d.x - mx, dy = d.y - my, q = dx*dx + dy*dy;
-    if (q < R2 && q > .01){
-      const dist = Math.sqrt(q), f = (1 - dist/R) * 3.2;
-      d.vx += dx/dist*f; d.vy += dy/dist*f;
+  const morph = P.morph;
+  for (let i=0;i<P.dots.length;i++){
+    const d = P.dots[i];
+    if (morph){
+      const p = Math.max(0,Math.min(1,(now-morph.start-i/P.dots.length*120)/morph.duration));
+      const ease = p*p*(3-2*p);
+      d.x = d.sx+(d.hx-d.sx)*ease;
+      d.y = d.sy+(d.hy-d.sy)*ease+Math.sin(Math.PI*p)*(i%2 ? 14 : -14);
+      d.r = d.sr+(d.t[0]-d.sr)*ease; d.g = d.sg+(d.t[1]-d.sg)*ease; d.b = d.sb+(d.t[2]-d.sb)*ease;
+    } else {
+      const dx = d.x - mx, dy = d.y - my, q = dx*dx + dy*dy;
+      if (q < R2 && q > .01){
+        const dist = Math.sqrt(q), f = (1 - dist/R) * 3.2;
+        d.vx += dx/dist*f; d.vy += dy/dist*f;
+      }
+      d.vx += (d.hx - d.x)*THEME.motion.spring; d.vy += (d.hy - d.y)*THEME.motion.spring;   // 弹簧拉回原位
+      d.vx *= THEME.motion.damp; d.vy *= THEME.motion.damp;                               // 阻尼：抖一下再停
+      d.x += d.vx; d.y += d.vy;
+      d.r += (d.t[0]-d.r)*.08; d.g += (d.t[1]-d.g)*.08; d.b += (d.t[2]-d.b)*.08;
     }
-    d.vx += (d.hx - d.x)*THEME.motion.spring; d.vy += (d.hy - d.y)*THEME.motion.spring;   // 弹簧拉回原位
-    d.vx *= THEME.motion.damp; d.vy *= THEME.motion.damp;                               // 阻尼：抖一下再停
-    d.x += d.vx; d.y += d.vy;
-    d.r += (d.t[0]-d.r)*.08; d.g += (d.t[1]-d.g)*.08; d.b += (d.t[2]-d.b)*.08;
     if (settled && Math.abs(d.t[0]-d.r) + Math.abs(d.t[1]-d.g) + Math.abs(d.t[2]-d.b) > 3) settled = false;
+  }
+  if (morph && now-morph.start>=morph.duration+120){
+    P.morph = null;
+    if (P.resamplePending){ P.resamplePending = false; sampleDots(false); }
+    updatePreviewAction();
   }
   ctx.clearRect(0,0,P.w,P.h);
   if (!P.tinted && settled){                               // 全是主色时一笔画完
@@ -833,8 +913,8 @@ function stepDots(){
   }
 }
 function pointerToCanvas(x,y){ const r = cv.getBoundingClientRect(); P.mx = x - r.left; P.my = y - r.top; }
-addEventListener("pointermove", e=>pointerToCanvas(e.clientX, e.clientY));
-cv.addEventListener("touchmove", e=>pointerToCanvas(e.touches[0].clientX, e.touches[0].clientY), { passive:true });
+addEventListener("pointermove", e=>{ if (!ring.mobile) pointerToCanvas(e.clientX, e.clientY); });
+cv.addEventListener("touchmove", e=>{ if (!ring.mobile) pointerToCanvas(e.touches[0].clientX, e.touches[0].clientY); }, { passive:true });
 document.addEventListener("pointerleave", ()=>{ P.mx = P.my = -1e4; });
 cv.addEventListener("touchend", ()=>{ P.mx = P.my = -1e4; });
 
@@ -1778,7 +1858,7 @@ function loop(t){
     const cell = Math.floor(ring.u);
     if (cell!==ring.cell){ if (ring.cell!==undefined) sndStep(Math.sign(cell - ring.cell), Math.abs(ring.tu - ring.u)); ring.cell = cell; }
     renderRing();
-    stepDots();
+    stepDots(t);
   } else if (route.view==="chapter"){
     renderChapter();
   }
@@ -1786,7 +1866,10 @@ function loop(t){
 }
 
 let rt;
-addEventListener("resize", ()=>{ clearTimeout(rt); rt = setTimeout(()=>{ layoutRing(); sampleDots(false); if (route.view==="chapter") measureChapter(); if (LB.open) lbResize(); }, 120); });
+function queueLayout(){ clearTimeout(rt); rt = setTimeout(()=>{ layoutRing(); sampleDots(false); if (route.view==="chapter") measureChapter(); if (LB.open) lbResize(); }, 120); }
+addEventListener("resize", queueLayout);
+if (mobileMedia.addEventListener) mobileMedia.addEventListener("change", queueLayout);
+else mobileMedia.addListener(queueLayout);
 function lbResize(){ lbLayout(); lpHide(); if (LB.phase==="shown") lbDrawDev(1); }
 
 (async function init(){
