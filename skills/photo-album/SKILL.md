@@ -30,7 +30,8 @@ description: >-
 | `references/examples.md` | 第 2 步。本站的 DNA，加 3 份截然不同的示例 |
 | `references/components.md` | 第 4 步。每个部件的契约、旋钮和可替换形式 |
 | `references/sound.md` | 第 4 步。乐器、音阶、每章声音配方、音量预算 |
-| `scripts/prepare_photos.py` | 第 1 步。生成 `photos/sq` 和 `photos/full` |
+| `scripts/prepare_photos.py` | 第 1 步。生成 `photos/sq`、`photos/full`，并自动调用 `bake_tints.py` |
+| `scripts/bake_tints.py` | 生成 `photos/tints.js`：每张方图的 32×32 色块，读不到像素时首页点阵字靠它染色。手动换过 `photos/sq` 后重跑 |
 | `scripts/analyze_photos.py` | 第 1 步。生成 `dna-seed.json` 和 `contact.jpg` |
 | `../../index.html` | 模板。顶部的「风格区」是要填的地方，其余是引擎 |
 
@@ -122,7 +123,8 @@ python3 skills/photo-album/scripts/analyze_photos.py <新站文件夹>/photos/fu
 
 ## 踩过的坑
 
-- **双击 `index.html` 用 `file://` 打开时**，浏览器不让读像素：点阵取色、风格台和大图都会失效。必须起本地服务器。
+- **双击 `index.html` 用 `file://` 打开时**，浏览器不让读像素。首页点阵字的染色和悬停音高会退回 `photos/tints.js` 里预烘的色块，所以 `tints.js` 一定要跟着照片重新生成，否则悬停时全是强调色；风格台和大图仍然需要本地服务器。
+- **在浏览器里验证 `file://` 的退路**：把 `getImageData` 改成读到照片就抛 SecurityError，再悬停照片，看 `P.tinted` 是否为 true。
 - **canvas 默认宽度是 300**。如果你按"尺寸变了才重设"的逻辑去改 canvas，而目标尺寸恰好是 150 × 2（dpr），就永远不会触发重设。要另外记住上一次的尺寸（参考 `LP.L`）。
 - **合成触摸事件时，`setPointerCapture` 可能抛错**，要用 try/catch 包起来。
 - **从 window 上派发的 keydown，`e.target` 不是 Node**，判断之前先用 `instanceof Node`。

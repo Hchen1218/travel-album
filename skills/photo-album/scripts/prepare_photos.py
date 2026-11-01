@@ -8,6 +8,7 @@
   python3 prepare_photos.py <原始照片文件夹> [--out 网站根目录] [--full 1600] [--sq 640]
 
 需要 Pillow（pip install pillow）。会按 EXIF 方向转正，文件名转成小写短横线。
+最后会调用 bake_tints.py 生成 photos/tints.js（直接双击 index.html 打开时，首页点阵字靠它染色）。
 输出的 JSON 可以直接抄进 index.html 的 CHAPTERS。
 """
 import argparse, json, re, sys, unicodedata
@@ -63,6 +64,9 @@ def main():
         print(f"{p.name} → {name}  {full.width}×{full.height}", file=sys.stderr)
 
     print(json.dumps(out, ensure_ascii=False, indent=2))
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from bake_tints import bake
+    bake(a.out)
 
 
 if __name__ == "__main__":

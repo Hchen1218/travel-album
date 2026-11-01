@@ -45,11 +45,12 @@
 
 ## 2. 点阵大字
 
-`wordPoints` · `sampleDots` · `setShape` · `photoTint` · `tintAt` · `stepDots` · `hoverChapter`
+`wordPoints` · `sampleDots` · `setShape` · `photoTint` · `bakedImg` · `tintAt` · `stepDots` · `hoverChapter`
 
 **契约**
 - 首页的大字（`THEME.home.word`）由粒子组成，粒子会躲开鼠标，然后弹回原位。
 - 悬停某张照片时，粒子重组成那一章的名字，并逐点染上那张照片的颜色。
+- 读不到照片像素（`file://` 直接打开）时也要染色：`photoTint` 先读缩略图，失败就用 `bakedImg` 读 `photos/tints.js` 里的 32×32 色块，两者都没有才退回强调色。
 - 平时粒子是强调色。
 
 **旋钮**

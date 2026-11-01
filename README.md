@@ -14,7 +14,7 @@
 
 ## 本地运行
 
-需要用本地服务器打开（直接双击 `index.html` 时，浏览器不允许读取照片像素，点阵取色和风格切换会失效）：
+需要用本地服务器打开（直接双击 `index.html` 时，浏览器不允许读取照片像素：首页点阵字仍会用 `photos/tints.js` 里预先算好的色块染色，但风格切换和大图显影会失效）：
 
 ```bash
 python3 -m http.server 8765
@@ -24,7 +24,7 @@ python3 -m http.server 8765
 
 ## 换照片
 
-照片在 `photos/sq/`（640×640 方图，用在照片环上）和 `photos/full/`（长边 1600，用在章节页上），两边文件名一致。章节、照片和图注都在 `index.html` 顶部的 `CHAPTERS` 数据里；标题、首页大字、字体、音阶和动效参数在旁边的 `THEME` 里。整理好的照片可以用 `skills/photo-album/scripts/prepare_photos.py` 生成。
+照片在 `photos/sq/`（640×640 方图，用在照片环上）和 `photos/full/`（长边 1600，用在章节页上），两边文件名一致。章节、照片和图注都在 `index.html` 顶部的 `CHAPTERS` 数据里；标题、首页大字、字体、音阶和动效参数在旁边的 `THEME` 里。整理好的照片可以用 `skills/photo-album/scripts/prepare_photos.py` 生成，它会顺带更新 `photos/tints.js`；手动替换了 `photos/sq/` 里的图，要再跑一次 `python3 skills/photo-album/scripts/bake_tints.py`。
 
 ## 用你自己的照片做一个
 

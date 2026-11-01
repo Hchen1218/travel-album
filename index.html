@@ -408,6 +408,7 @@ a{color:inherit;text-decoration:none}
 
 <div class="curtain" id="curtain" aria-hidden="true"><b></b></div>
 
+<script src="photos/tints.js"></script>
 <script>
 /* ============================================================
    风格区（JS）：换成别人的相册，改这里的 THEME、CHAPTERS、TEXT_TILES，
@@ -771,27 +772,47 @@ function setShape(k, src, burst=true){
 const LUMS = new Map();
 function photoLum(src){
   if (LUMS.has(src)) return LUMS.get(src);
+  for (const im of [tileImg(src), bakedImg(src)]){
+    if (!im) continue;
+    try {
+      const g = document.createElement("canvas").getContext("2d", { willReadFrequently:true }); g.canvas.width = g.canvas.height = 16;
+      g.drawImage(im, 0, 0, 16, 16); const d = g.getImageData(0,0,16,16).data; let L = 0;
+      for (let i=0; i<d.length; i+=4) L += lumOf(d[i], d[i+1], d[i+2]);
+      LUMS.set(src, L/256); return L/256;
+    } catch(e){}
+  }
+  return null;
+}
+// 已经加载好的照片环缩略图
+function tileImg(src){
   const img = $(`.tile img[src="photos/sq/${src}.jpg"]`);
-  if (!img || !img.complete || !img.naturalWidth) return null;
-  try {
-    const g = document.createElement("canvas").getContext("2d", { willReadFrequently:true }); g.canvas.width = g.canvas.height = 16;
-    g.drawImage(img, 0, 0, 16, 16); const d = g.getImageData(0,0,16,16).data; let L = 0;
-    for (let i=0; i<d.length; i+=4) L += lumOf(d[i], d[i+1], d[i+2]);
-    LUMS.set(src, L/256); return L/256;
-  } catch(e){ return null; }
+  return img && img.complete && img.naturalWidth ? img : null;
+}
+// 用 file:// 直接打开时浏览器不让读照片像素，改用 photos/tints.js 里预先缩好的 32×32 色块（bake_tints.py 生成）
+const BAKED = new Map();
+function bakedImg(src){
+  if (BAKED.has(src)) return BAKED.get(src);
+  const T = window.PHOTO_TINTS, b = T && T.data[src]; if (!b) return null;
+  const raw = atob(b), g = document.createElement("canvas").getContext("2d"); g.canvas.width = g.canvas.height = T.size;
+  const im = g.createImageData(T.size, T.size);
+  for (let i=0, j=0; i<raw.length; i+=3, j+=4){ im.data[j] = raw.charCodeAt(i); im.data[j+1] = raw.charCodeAt(i+1); im.data[j+2] = raw.charCodeAt(i+2); im.data[j+3] = 255; }
+  g.putImageData(im, 0, 0); BAKED.set(src, g.canvas); return g.canvas;
 }
 function photoTint(src){
   if (P.tints.has(src)) return P.tints.get(src);
-  const img = $(`.tile img[src="photos/sq/${src}.jpg"]`);
-  if (!img || !img.complete || !img.naturalWidth) return null;
-  try {
-    const g = document.createElement("canvas").getContext("2d", { willReadFrequently:true });
-    g.canvas.width = P.w; g.canvas.height = P.h;
-    const s = Math.max(P.w/img.naturalWidth, P.h/img.naturalHeight), dw = img.naturalWidth*s, dh = img.naturalHeight*s;
-    g.drawImage(img, (P.w-dw)/2, (P.h-dh)/2, dw, dh);
-    const data = g.getImageData(0,0,P.w,P.h).data;
-    P.tints.set(src, data); return data;
-  } catch(e){ return null; }   // 用 file:// 直接打开时浏览器不让读像素，退回主色
+  for (const im of [tileImg(src), bakedImg(src)]){
+    if (!im) continue;
+    try {
+      const g = document.createElement("canvas").getContext("2d", { willReadFrequently:true });
+      g.canvas.width = P.w; g.canvas.height = P.h;
+      const iw = im.naturalWidth || im.width, ih = im.naturalHeight || im.height;
+      const s = Math.max(P.w/iw, P.h/ih), dw = iw*s, dh = ih*s;
+      g.drawImage(im, (P.w-dw)/2, (P.h-dh)/2, dw, dh);
+      const data = g.getImageData(0,0,P.w,P.h).data;
+      P.tints.set(src, data); return data;
+    } catch(e){}   // 读不到像素就试下一个来源，都不行才退回主色
+  }
+  return null;
 }
 // 太浅的颜色压暗一点，免得在米白底上看不见
 function tintAt(data, x, y){
