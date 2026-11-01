@@ -767,6 +767,19 @@ function setShape(k, src, burst=true){
   cv.setAttribute("aria-label", k ? CHAPTERS[k-1].en : HOME.word);
 }
 // 把照片按 cover 铺进文字画布，每个点取自己位置的颜色
+// 照片的平均亮度（0–1），决定首页悬停音的音高
+const LUMS = new Map();
+function photoLum(src){
+  if (LUMS.has(src)) return LUMS.get(src);
+  const img = $(`.tile img[src="photos/sq/${src}.jpg"]`);
+  if (!img || !img.complete || !img.naturalWidth) return null;
+  try {
+    const g = document.createElement("canvas").getContext("2d", { willReadFrequently:true }); g.canvas.width = g.canvas.height = 16;
+    g.drawImage(img, 0, 0, 16, 16); const d = g.getImageData(0,0,16,16).data; let L = 0;
+    for (let i=0; i<d.length; i+=4) L += lumOf(d[i], d[i+1], d[i+2]);
+    LUMS.set(src, L/256); return L/256;
+  } catch(e){ return null; }
+}
 function photoTint(src){
   if (P.tints.has(src)) return P.tints.get(src);
   const img = $(`.tile img[src="photos/sq/${src}.jpg"]`);
@@ -1438,6 +1451,8 @@ function sndInit(){
   SND.wet = ac.createGain(); SND.wet.gain.value = .32; SND.wet.connect(verb);
   // fx 总线：悬停音、转场；lp 总线：章节环境声，横向滚动时改它的亮度
   SND.fx = ac.createGain(); SND.fx.connect(SND.out); SND.fx.connect(SND.wet);
+  const hl = ac.createBiquadFilter(); hl.type = "lowpass"; hl.frequency.value = 3200; hl.Q.value = .5;   // 悬停音再过一道柔和低通，去掉刺耳的高频
+  SND.hov = ac.createGain(); SND.hov.connect(hl).connect(SND.fx);
   SND.lp = ac.createBiquadFilter(); SND.lp.type = "lowpass"; SND.lp.frequency.value = 2400; SND.lp.Q.value = .5;
   SND.lp.connect(SND.out); SND.lp.connect(SND.wet);
   SND.noise = ac.createBuffer(1, ac.sampleRate*2, ac.sampleRate);
@@ -1449,28 +1464,30 @@ function sndInit(){
 }
 function env(g, t, a, peak, dec){ g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(peak, t+a); g.gain.exponentialRampToValueAtTime(.0001, t+a+dec); }
 const V = {
-  bell(f, t, dest, v=.16){                     // 钟：FM 合成
+  bell(f, t, dest, v=.16, soft=false){         // 钟：FM 合成。soft：调制深度封顶，泛音少、起音软
     const ac = A(), c = ac.createOscillator(), m = ac.createOscillator(), mg = ac.createGain(), g = ac.createGain();
+    const idx = soft ? Math.min(f*2.4, 520) : f*2.4;
     c.frequency.value = f; m.frequency.value = f*3.51;
-    mg.gain.setValueAtTime(f*2.4, t); mg.gain.exponentialRampToValueAtTime(f*.04, t+2.6);
-    m.connect(mg).connect(c.frequency); c.connect(g).connect(dest); env(g, t, .004, v, 3.4);
+    mg.gain.setValueAtTime(idx, t); mg.gain.exponentialRampToValueAtTime(Math.max(1, idx/60), t+2.6);
+    m.connect(mg).connect(c.frequency); c.connect(g).connect(dest); env(g, t, soft ? .01 : .004, v, 3.4);
     c.start(t); m.start(t); c.stop(t+3.6); m.stop(t+3.6);
   },
-  pluck(f, t, dest, v=.3){                     // 拨弦：Karplus-Strong，每个音高的波形算一次就缓存
-    const ac = A(), key = Math.round(f); let buf = SND.ks.get(key);
+  pluck(f, t, dest, v=.3, soft=false){         // 拨弦：Karplus-Strong，每个音高的波形算一次就缓存。soft：起音的噪声先磨圆
+    const ac = A(), key = Math.round(f) + (soft ? "s" : ""); let buf = SND.ks.get(key);
     if (!buf){
       const sr = ac.sampleRate, n = Math.floor(sr*2.4), p = Math.max(2, Math.round(sr/f));
       buf = ac.createBuffer(1, n, sr); const x = buf.getChannelData(0);
       for (let i=0; i<p; i++) x[i] = Math.random()*2-1;
+      if (soft) for (let k=0; k<3; k++) for (let i=1; i<p; i++) x[i] = (x[i] + x[i-1])*.5;
       for (let i=p; i<n; i++) x[i] = (x[i-p] + x[i-p+1])*.4985;
       SND.ks.set(key, buf);
     }
     const s = ac.createBufferSource(), g = ac.createGain(); s.buffer = buf; g.gain.value = v; s.connect(g).connect(dest); s.start(t);
   },
-  synth(f, t, dest, v=.07, dur=.2){            // 霓虹：两个略走音的锯齿波 + 共振低通往下扫
+  synth(f, t, dest, v=.07, dur=.2, soft=false){   // 霓虹：两个略走音的锯齿波 + 共振低通往下扫。soft：共振和起扫频率都压低
     const ac = A(), fl = ac.createBiquadFilter(), g = ac.createGain();
-    fl.type = "lowpass"; fl.Q.value = 7; fl.frequency.setValueAtTime(Math.min(12000, f*9), t); fl.frequency.exponentialRampToValueAtTime(f*1.2, t+dur);
-    fl.connect(g).connect(dest); env(g, t, .004, v, dur);
+    fl.type = "lowpass"; fl.Q.value = soft ? 3 : 7; fl.frequency.setValueAtTime(Math.min(soft ? 2800 : 12000, f*9), t); fl.frequency.exponentialRampToValueAtTime(f*1.2, t+dur);
+    fl.connect(g).connect(dest); env(g, t, soft ? .01 : .004, v, dur);
     [0,7].forEach(dt=>{ const o = ac.createOscillator(); o.type = "sawtooth"; o.frequency.value = f; o.detune.value = dt; o.connect(fl); o.start(t); o.stop(t+dur+.05); });
   },
   keys(f, t, dest, v=.07, dur=1.8){            // lo-fi 电钢：正弦加两个泛音
@@ -1585,10 +1602,12 @@ const LB_SND = [
   },
 ];
 
-// 每章的悬停音色：高塔钟、霓虹合成器、朱红拨弦、绿荫木琴、漫游高音拨弦、小事电钢
+// 每章的悬停音色：高塔钟、霓虹合成器、朱红拨弦、绿荫木琴、漫游高音拨弦、小事电钢。
+// 悬停音会频繁触发，一律用柔和版、不往上翻到人耳最敏感的 1–4kHz（升八度后超过 900Hz 就不升），音量按实测响度拉平
+const up8 = f => f*2 > 900 ? f : f*2;
 const VOICE = [
-  (f,t,d)=>V.bell(f*2, t, d, .09), (f,t,d)=>V.synth(f*2, t, d, .06, .25), (f,t,d)=>V.pluck(f, t, d, .32),
-  (f,t,d)=>V.wood(f*2, t, d, .14), (f,t,d)=>V.pluck(f*2, t, d, .22), (f,t,d)=>V.keys(f, t, d, .08, 1.2),
+  (f,t,d)=>V.bell(f, t, d, .047, true), (f,t,d)=>V.synth(f, t, d, .05, .3, true), (f,t,d)=>V.pluck(f, t, d, .2, true),
+  (f,t,d)=>V.wood(up8(f), t, d, .135), (f,t,d)=>V.pluck(up8(f), t, d, .2, true), (f,t,d)=>V.keys(f, t, d, .066, 1.2),
 ];
 // 每章的环境声：返回要停掉的持续声源，和一个按时间排下一个音的 tick
 const SCENES = [
@@ -1648,8 +1667,9 @@ function sndTick(){
 }
 function sndHover(ci, pi){
   if (!sndReady()) return; const t = A().currentTime;
-  if (t - SND.last < .05) return; SND.last = t;
-  VOICE[ci](hz(mod(ci*2 + pi*3, 10)), t, SND.fx);
+  if (t - SND.last < .09) return; SND.last = t;                     // 手指连续划过时不堆音
+  const L = photoLum(CHAPTERS[ci].photos[pi].src);
+  VOICE[ci](hz(L===null ? mod(ci*2 + pi*3, 8) : Math.round(L*7)), t, SND.hov);   // 音高由照片亮度决定：暗的低、亮的高
 }
 // 照片环每走一格响一个音，滚动起来就是一段旋律；滚得越快越响
 function sndStep(dir, speed){
